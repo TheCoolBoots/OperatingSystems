@@ -12,6 +12,7 @@ Yo!Yo!Yo!3[Detaching after fork from child process 57732]
 Yo!Yo!Yo!Yo!4[Detaching after fork from child process 57733]
 Yo!Yo!Yo!Yo!Yo!5Yo!Yo!Yo!Yo!Yo!5[Inferior 1 (process 57724) exited normally]
 
+
 Part 1:
 
 coolboots@Crux:~/Documents/CPE 453 Operating Systems/program0_warmup$ ./a.out > out.txt
@@ -40,3 +41,36 @@ same behavior as normal
 
 >>    4 childparent
     996 parentchild
+
+
+Part 2:
+
+./a.out & pmap !$
+
+>> 00055d96871b000      4K r---- a.out
+000055d96871c000      4K r-x-- a.out
+000055d96871d000      4K r---- a.out
+000055d96871e000      4K r---- a.out
+000055d96871f000      4K rw--- a.out
+000055d968d67000    132K rw---   [ anon ]
+00007fba02bf6000    136K r---- libc-2.31.so
+00007fba02c18000   1504K r-x-- libc-2.31.so
+00007fba02d90000    312K r---- libc-2.31.so
+00007fba02dde000     16K r---- libc-2.31.so
+00007fba02de2000      8K rw--- libc-2.31.so
+00007fba02de4000     24K rw---   [ anon ]
+00007fba02e06000      4K r---- ld-2.31.so
+00007fba02e07000    140K r-x-- ld-2.31.so
+00007fba02e2a000     32K r---- ld-2.31.so
+00007fba02e33000      4K r---- ld-2.31.so
+00007fba02e34000      4K rw--- ld-2.31.so
+00007fba02e35000      4K rw---   [ anon ]
+00007ffd9cc69000    132K rw---   [ stack ]
+00007ffd9cd2e000     16K r----   [ anon ]
+00007ffd9cd32000      8K r-x--   [ anon ]
+ffffffffff600000      4K --x--   [ anon ]
+ total             2500K
+
+the leftmost hexadecimal number is probably the address, the next number is probably block size,
+the next bit is probably permissions for the section, idk what the last bit is but it looks like some
+kind of label. Maybe the caller?

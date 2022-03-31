@@ -3,10 +3,12 @@
 #include <unistd.h>
 
 #define ITER_MAX 1000
-#define SLEEP .10
+#define SLEEP 10
 
 int main(void)
 {
+    printf("%d", getpid());
+
     char msg_p[] = "parent";
     char msg_c[] = "child";
     char nl[] = "\n";
