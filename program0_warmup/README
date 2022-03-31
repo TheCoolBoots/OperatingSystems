@@ -14,3 +14,29 @@ Yo!Yo!Yo!Yo!Yo!5Yo!Yo!Yo!Yo!Yo!5[Inferior 1 (process 57724) exited normally]
 
 Part 1:
 
+coolboots@Crux:~/Documents/CPE 453 Operating Systems/program0_warmup$ ./a.out > out.txt
+coolboots@Crux:~/Documents/CPE 453 Operating Systems/program0_warmup$ cat out.txt | sort | uniq -c
+
+>> 1000 parentchild
+
+parent ran first every time
+
+1.     
+    415 childarent
+    585 childparent
+ 257309 parent
+      1 pparent
+2. 
+
+>> 1000 parentchild
+
+3.
+
+>> 1000 parentchild
+
+same behavior as normal
+
+4.
+
+>>    4 childparent
+    996 parentchild

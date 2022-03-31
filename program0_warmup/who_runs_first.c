@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 #define ITER_MAX 1000
-#define SLEEP 1.0
+#define SLEEP .10
 
 int main(void)
 {
@@ -15,21 +15,24 @@ int main(void)
     {
         if (fork())
         {
-            // sleep(SLEEP);
-            /* printf("parent ");  fflush(stdout); */
+            sleep(SLEEP);
+            // printf("parent");  
+            // fflush(stdout);
             write(STDOUT_FILENO, msg_p, sizeof(msg_p) - 1);
             wait(NULL);
         }
         else
         {
-            // sleep(SLEEP);
-            /* printf("child ");  fflush(stdout); */
+            sleep(SLEEP);
+            // printf("child");  
+            // fflush(stdout);
             write(STDOUT_FILENO, msg_c, sizeof(msg_c) - 1);
             return 0;
         }
 
-        // sleep(SLEEP);
-        /*printf("%i\n",i); fflush(stdout); */
+        sleep(SLEEP);
+        // printf("\n"); 
+        // fflush(stdout);
         write(STDOUT_FILENO, nl, sizeof(nl) - 1);
     }
 
