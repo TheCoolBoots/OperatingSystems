@@ -1,0 +1,16 @@
+Part 0: 
+
+4.
+output = 0Yo!1Yo!Yo!2Yo!Yo!Yo!3Yo!Yo!Yo!Yo!4Yo!Yo!Yo!Yo!Yo!5Yo!Yo!Yo!Yo!Yo!5
+in the guard statement of the while loop, fork is called
+
+[Detaching after fork from child process 57728]
+0[Detaching after fork from child process 57729]
+Yo!1[Detaching after fork from child process 57730]
+Yo!Yo!2[Detaching after fork from child process 57731]
+Yo!Yo!Yo!3[Detaching after fork from child process 57732]
+Yo!Yo!Yo!Yo!4[Detaching after fork from child process 57733]
+Yo!Yo!Yo!Yo!Yo!5Yo!Yo!Yo!Yo!Yo!5[Inferior 1 (process 57724) exited normally]
+
+Part 1:
+
