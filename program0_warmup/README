@@ -1,9 +1,15 @@
+Andrew Lai and Jen Vazquez 
+
 Part 0: 
 
 4.
 output = 0Yo!1Yo!Yo!2Yo!Yo!Yo!3Yo!Yo!Yo!Yo!4Yo!Yo!Yo!Yo!Yo!5Yo!Yo!Yo!Yo!Yo!5
 in the guard statement of the while loop, fork is called
+When the stdout is not fflushed, it concatenates all the Yo!'s as shown above. 
+When it is fflushed, we get 0Yo!1Yo!2Yo!3Yo!4Yo!55 which is what we expected. 
 
+
+Not fflushed with the gdb debugger:
 [Detaching after fork from child process 57728]
 0[Detaching after fork from child process 57729]
 Yo!1[Detaching after fork from child process 57730]
@@ -20,13 +26,13 @@ coolboots@Crux:~/Documents/CPE 453 Operating Systems/program0_warmup$ cat out.tx
 
 >> 1000 parentchild
 
-parent ran first every time
+Parent ran first every time
 
 1.     
     415 childarent
     585 childparent
- 257309 parent
-      1 pparent
+    257309 parent
+    1 pparent
 2. 
 
 >> 1000 parentchild
@@ -35,13 +41,19 @@ parent ran first every time
 
 >> 1000 parentchild
 
-same behavior as normal
+2 and 3 ran the same way while the the first version with just printf had 
+a different output. For number 1, it ran like that because of a combination of 
+the printf and not fflushing the output. 
+
 
 4.
 
+Example:
 >>    4 childparent
     996 parentchild
 
+When we run for .1 second, it printed out differently every time.
+When we run for 1 second, it takes too long to find out. 
 
 Part 2:
 
@@ -71,6 +83,6 @@ Part 2:
 ffffffffff600000      4K --x--   [ anon ]
  total             2500K
 
-the leftmost hexadecimal number is probably the address, the next number is probably block size,
-the next bit is probably permissions for the section, idk what the last bit is but it looks like some
+The leftmost hexadecimal number is probably the address, the next number is probably block size,
+the next bit is probably permissions for the section, not sure what the last bit is but it looks like some
 kind of label. Maybe the caller?
