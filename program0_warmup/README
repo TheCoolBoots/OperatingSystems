@@ -73,4 +73,4 @@ ffffffffff600000      4K --x--   [ anon ]
 
 the leftmost hexadecimal number is probably the address, the next number is probably block size,
 the next bit is probably permissions for the section, idk what the last bit is but it looks like some
-kind of label. Maybe the caller?
+kind of label. Maybe the content label?
