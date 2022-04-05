@@ -42,7 +42,7 @@ Parent ran first every time
 >> 1000 parentchild
 
 2 and 3 ran the same way while the the first version with just printf had 
-a different output. For number 1, it ran like that because of a combination of 
+a different output. For number 1, we think it ran like that because of a combination of 
 the printf and not fflushing the output. 
 
 
@@ -53,7 +53,8 @@ Example:
     996 parentchild
 
 When we run for .1 second, it printed out differently every time.
-When we run for 1 second, it takes too long to find out. 
+When we run for 1 second, and it seems like it ran the same. The radio between 
+the two output lines were similar. 
 
 Part 2:
 
