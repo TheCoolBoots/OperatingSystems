@@ -43,7 +43,8 @@ Parent ran first every time
 
 2 and 3 ran the same way while the the first version with just printf had 
 a different output. For number 1, we think it ran like that because of a combination of 
-the printf and not fflushing the output. 
+the printf and not fflushing the output. This is how it ran on our system, it quite possibly 
+run differently on different machines. 
 
 
 4.
@@ -54,7 +55,8 @@ Example:
 
 When we run for .1 second, it printed out differently every time.
 When we run for 1 second, and it seems like it ran the same. The radio between 
-the two output lines were similar. 
+the two output lines were similar. The parent ran first the majority of the time in 
+each case.  
 
 Part 2:
 
