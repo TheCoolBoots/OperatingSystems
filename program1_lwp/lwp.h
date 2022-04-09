@@ -42,6 +42,7 @@ extern int lwp_running;         /* the index of the currently running LWP */
 typedef void (*lwpfun)(void *); /* type for lwp function */
 typedef int  (*schedfun)(void); /* type for scheduler function */
 
+
 /* lwp functions */
 extern int  new_lwp(lwpfun,void *,size_t);
 extern void lwp_exit();
