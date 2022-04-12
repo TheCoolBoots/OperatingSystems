@@ -1,0 +1,73 @@
+Scheduler
+    maximizing resources
+        - utilization
+
+    challenges
+        - how to differentiate between IO vs CPU bound processes
+        - limited information
+
+    simflication assumptions
+        - every job runs for the same amount of time
+        - all jobs "arrive" at the same time
+        - once scheduled, jobs run to completion
+        - all jobs are CPU bound
+        - runtimes for each job is known
+
+    terms
+        job = process
+        workload = collection of running jobs
+        non-preemptive = process isnt interrupted
+        preemptive = process can be interrupted
+
+    metrics of success
+        - cpu utilization (idle time)
+        - turnaround time (time between job arrival and job completion)
+        - wait time (time spent ready but not running)
+        - response time (time it takes for job to recieve user input/user interaction)
+            - not always a clear computation
+        - throughput (# jobs by time)
+
+    users really only care about the appearance of performance though
+        programs open quickly
+        programs respond quickly
+
+    Qualities of a process
+        burst time          
+        I/O requirements
+        priority                - Kind of knows
+        age                     - Knows
+        other dependencies
+        run time
+
+    Scheduling Algorithms
+        Batch scheduling
+            first come first serve (FIFO queue)
+                fair
+                simple
+                can be predictable
+                convoy effect (1 super long job before 1000 short jobs; reduces throughput)
+            shortest job first
+                optimal for maximizing throughput
+                non-preemptive
+            shortest job next
+                AKA shortest remaining job first
+                AKA shortest remaining job next
+                preemptive
+                burst times compared at job arrival
+                P1 @ 0 = 5, P2 @ 1 = 3, P3 @ 3 = 4
+                ** make gantt chart and calculate wait time, turnaround time
+            priority based scheduling
+                taking age or some other metric into account when scheduling
+            round robin scheduling
+                everyone gets some amount of time on the cpu
+                fcfs w/preemption based on quantum
+                highly predictable
+                low variance, potentially higher wait times
+            multi-level feedback queueing
+                create queues w/ different priorities
+                1. if the priority(A) > priority(B), then A runs
+                2. if priority(A) == priority(B), then A + B run using round robin
+                3. when job arrives, placed in highest priority queue
+                4a. if a job uses entire quantum, its priority is reduced
+                4b. if job gives up the CPU before quantum is up (if job gets blocked)
+                    it stays in current queue
