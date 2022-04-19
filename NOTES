@@ -71,3 +71,57 @@ Scheduler
                 4a. if a job uses entire quantum, its priority is reduced
                 4b. if job gives up the CPU before quantum is up (if job gets blocked)
                     it stays in current queue
+                5. after some time S (age), move job to top-most queue
+
+                    S is usually annecdotally derived; no way to figure it out perfectly
+
+                stack:
+                    
+                    &A      <- points to previous base pointer (A)
+                    &main
+                    a
+                    local
+                    local
+                    .
+                    .
+                    .
+                    A
+
+        Problems!:
+            synchronization
+                processes can be interrupted at any time
+                threads can be interrupted at any time
+                critical sections
+                hogging critical sections due to happenstance
+
+                any solution to the critical selection problem must have:
+                    1) mutual exclusion (correctness)
+                        only let one thread into critical section at a time
+                    2) progress (fairness)
+                        every thread will eventually enter critical section if it wants
+                        cant let one thread continuously lock the critical section
+                    3) bounded wait (performance)
+                        limit the amount of time someone will wait for a lock to become available
+                    cant rely on knowing the number of CPU's or speed of CPU's
+
+        Solution 1: Peterson's solution
+            software only solution
+            for two threads (i, j) only
+
+            // shared variables
+            int turn
+            bool flay[2]
+
+            // thread i
+            do{
+                flag[i] = True
+                turn = j
+                while(flag[j] && turn == j); //wait
+                
+                // critical section
+                
+                flag[i] = false;
+            } while(True)
+
+        
+                    
