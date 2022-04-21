@@ -97,6 +97,7 @@ Scheduler
                 any solution to the critical selection problem must have:
                     1) mutual exclusion (correctness)
                         only let one thread into critical section at a time
+                        accomplished through lock
                     2) progress (fairness)
                         every thread will eventually enter critical section if it wants
                         cant let one thread continuously lock the critical section
@@ -123,5 +124,233 @@ Scheduler
                 flag[i] = false;
             } while(True)
 
-        
-                    
+        Hardware Solutions
+            1) disable interrupts
+                not very practical
+                what if multiple CPU's?
+            2) atomic instructions (does these things in 1 instruction)
+                accomplishes by locking memory
+
+                TestSetLock (lock)
+                    bool TestAndSet(bool *lock){
+                        bool ret = *lock;
+                        *lock = TRUE;
+                        return ret;
+                    }
+
+                    lock = FALSE;
+                    do{
+                        while(TestAndSet(&lock));   // this is called a spin lock
+                        // CRITICAL SECTION
+                        lock = FALSE;
+                    } while(true)
+
+                    does not solve 100%, only solves mutual exclusion; no progress/bounded wait
+
+                    when to use spin lock? when critical section is small enough such that spin lock wait is
+                    less expensive than context switching
+
+                Swap
+    
+    Semaphores
+        integer variable used for synchronization
+            accessed through two atomic operations:
+
+            wait(S){
+                < insert lock here to achieve mutual exclusion? >
+                S--;
+                while(S < 0);
+            }
+
+            signal(S){
+                S++;
+            }
+
+        Binary Semaphore = when S set to 1
+            mutex lock
+            do{
+                wait(mutex);
+
+                // critical section
+
+                signal(mutex);
+            } while (TRUE);
+
+        can do synchronization
+        can act as a barrier (limit number of threads allowed at a time)
+            maximize core usage
+
+
+        blocking semaphore
+            semaphore S
+
+            wait(S){
+                S -> value--
+                while(S->value < 0){
+                    add_thread(S->queue)
+                    sleep() <- magical thread sleep function
+                }
+            }
+
+            signal(S){
+                S->value++
+                if (s->value <=0 ){
+                    += get_thread(S->queue)
+                    wakeup #
+                }
+            }
+
+            // when thread waits, it gets added to a queue
+
+            typedef struct_zem_t{
+                int value
+                pthread_cond_t cond
+                pthread_mutex_t lock    
+
+            }
+
+            void zem-wait(zem_t *z){
+                mutex_lock(&z->lock)    <- all of these functions are in the pthread library
+                while(z->value <= 0)
+                    cond_wait(&z->cond, &z->lock)   <- lock must reacquired before returning
+                z->value --
+                mutex_unlock(&z->lock)
+            }
+
+            void zen-post(zem_t *z){
+                mutex_lock(&z->lock)
+                z->value++
+                cond_signal(&z->cond)
+                mutex_unlock(&z->lock)
+            }
+
+        problems with locks/semaphores:
+            T1:
+                lock(S) 1
+                lock(T) 3
+
+            T2:
+                lock(T) 2
+                lock(S) 4
+
+            T1, T2 need the variable locked by the opposite thread
+            enter deadlock
+
+        classic synchronization problems
+            consumer/producer
+            bounded buffer
+            atomicity violations
+                how threads access variables
+
+                T1
+                if (thd -> proc_info){
+                    fputs(thd->proc_info...)
+                    ...
+                }
+
+                T2
+                if thd->proc_info = NULL
+
+            ordering
+                T1: (parent)
+                    mThread = PIR_CreateThread(mMain, ...)
+                
+                T2:
+                    void mMain(...){
+                        // if this runs before assignment of mThread in T1, can cause issues
+                        m State = mThread -> State
+                    }
+
+            dining philosopher's problem
+                to eat, need 2 chopsticks
+                to think, need 0 chopsticks
+                if 5 philosophers and 5 chopsticks
+                    how to maximize throughput
+
+                
+                void P(int i){
+                    while(1){
+                        think()
+
+                        ** one solution = acquire two chopsticks at same time?
+                            still have issue with release(), that also needs to be atomic
+                            but if we make that atomic, then only 1 person can eat at a time
+                            very subtle problems
+
+                        wait(mutex)
+
+                        acquire(chopstick[i])       // can get deadlock if all get preempted after this instructions
+                        acquire(chopstick[i+1%N])
+
+                        signal(mutex)
+                        eat()
+
+                        **
+                        release(chopstick[i])
+                        release(chopstick[i+i%N])
+                    }
+                }
+
+
+
+                N = 5
+                left (i+n-1) %n
+                left (i+1) %n
+                thinking 0
+                hungry 1
+                eating 2
+                state[n]
+                semaphore mutex = 1
+                semaphore S[n]
+
+                void p(int i){
+                    while(1){
+                        think()
+                        take_chopsticks(i)
+                        eat()
+                        put_chopsticks(i)
+                    }
+                }
+
+                take_chopsticks(int i){
+                    wait(&mutex)
+                    state[i] = hungry
+                    test(i)
+                    signal(&mutex)
+                    wait(&s[i])
+                }
+
+                put_chopsticks(int i){
+                    wait (&mutex)
+                    state[i] = thinking
+                    test(left)
+                    test(right)
+                    signal(mutex)
+                }
+
+                test(int i){
+                    if(state[i] == hungry && 
+                        state[left] != eating && 
+                        state[right] != eating){
+                            state[i] = eating
+                            signal(&s[i])
+                    }
+                }
+
+        deadlock
+            a set of processes/threads are waiting for an event that only another process/thread in that set can cause
+
+            resource deadlock
+            communication deadlock
+                A sends a message then wait()
+                B sends something back then wait()
+                works until a message gets blocked in transit
+            necessary conditions for deadlock
+                mutual exclusion
+                    one resource held by one process at a time
+                hold & wait
+                    holding one resource and waiting for another
+                no resource preemption
+                    resource can only be released voluntarily
+                circular wait
+                    a set of processes/threads {p0, p1, ... pn} such that Pi is waiting on resources used by P(i+1) % n
