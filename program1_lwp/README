@@ -1,0 +1,7 @@
+Andrew Lai
+
+How is this LWP library different from a real thread management library? Name two ways in which this LWP library API could be improved.
+
+Firstly this thread management library is single-cored while most others can take advantage of multiple cores. This library also doesn't have any synchronization tools for shared memory. 
+
+One way this library could be improved is tying up all the memory leaks. Also the round robin scheduler doesn't have perfect round robin scheduling, it just passes control to the next thread. This means it's not necessarily sharing cpu time equally.

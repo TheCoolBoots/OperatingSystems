@@ -13,6 +13,7 @@ lwp_context lwp_ptable[LWP_PROC_LIMIT];
 int lwp_procs = 0;
 int lwp_running = -1;
 
+
 int new_lwp(lwpfun functionPointer, void * argument, size_t words){
     ptr_int_t *stack = (ptr_int_t*) malloc(sizeof(ptr_int_t) * words);
     ptr_int_t *sp = stack + words + 1;
@@ -63,21 +64,6 @@ int new_lwp(lwpfun functionPointer, void * argument, size_t words){
 }
 
 
-/*
-
-lwp_new()
-lwp_start()
-lwp_yield()
-lwp_new()
-lwp_start()
-lwp_yield()
-lwp_exit()
-lwp_start()
-lwp_exit()
-
-*/
-
-
 void lwp_start(){
     // if there arent any threads to run, just return
     if(lwp_procs == 0){
@@ -90,8 +76,8 @@ void lwp_start(){
     GetSP(mainSP);
 
     // select thread to run
-    // int threadToRun = getScheduledThread();
-    int threadToRun = 0;
+    int threadToRun = getScheduledThread();
+    // int threadToRun = 0;
 
     // set stack pointer to thread's stack pointer
     SetSP(lwp_ptable[threadToRun].sp);
@@ -103,6 +89,7 @@ void lwp_start(){
     return;
 }
 
+
 void lwp_yield(){
     SAVE_STATE();
 
@@ -111,15 +98,55 @@ void lwp_yield(){
     // select thread to run
     int threadToRun = getScheduledThread();
 
-        // set stack pointer to thread's stack pointer
+    // set stack pointer to thread's stack pointer
     SetSP(lwp_ptable[threadToRun].sp);
     lwp_running = threadToRun;
+
     // load new thread's state
     RESTORE_STATE();
 
     // return (using the trick to jump into thread's function)
     return;
 }
+
+
+void lwp_set_scheduler(schedfun sched){
+    schedulingFunction = sched;
+}
+
+
+void lwp_exit(){
+    // delete the current running entry in lwp_ptable
+    // free(lwp_ptable[lwp_running].stack);
+
+    // move subsequent entries to one lower
+    int i;
+    for(i = lwp_running; i < lwp_procs - 1; i++){
+        lwp_ptable[i] = lwp_ptable[i + 1];
+    } 
+
+    // decrement lwp_procs
+    lwp_procs -= 1;
+    lwp_running -= 1;
+
+    // if no more threads to run, stop lwp
+    if(lwp_procs == 0){
+        lwp_stop();
+    }
+    else{ 
+        lwp_running = getScheduledThread();
+        SetSP(lwp_ptable[lwp_running].sp);
+        RESTORE_STATE();
+    }
+}
+
+
+void lwp_stop(){
+    SAVE_STATE();
+    SetSP(mainSP);
+    RESTORE_STATE();
+}
+
 
 int getScheduledThread(){
     if(schedulingFunction == NULL){
@@ -131,20 +158,7 @@ int getScheduledThread(){
     }
 }
 
+
 int roundRobinScheduling(){
-    return 1;
-}
-
-void lwp_set_scheduler(schedfun sched){
-    schedulingFunction = sched;
-}
-
-void lwp_exit(){
-    // delete the current running entry in lwp_ptable
-    // move subsequent entries to one lower
-    // decrement lwp_procs
-    // set current running thread to -1
-    // set SP to main thread's SP
-    // restore state
-    // return?
+    return (lwp_running + 1)%lwp_procs;
 }
