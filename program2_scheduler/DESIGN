@@ -1,0 +1,12 @@
+class job
+    float arrivalTime
+    float runTime
+    int id
+
+
+shortest-remaining(jobs : list[job])
+FIFO(jobs : list[job])
+round-robin(jobs : list[job], quantum : float = 1) 
+    each of these print: "Job %3d -- Turnaround %3.2f  Wait %3.2f" for each job
+    then print averages: "Average -- Turnaround %3.2f  Wait %3.2f"
+
