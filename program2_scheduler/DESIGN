@@ -1,12 +1,32 @@
 class job
-    float arrivalTime
-    float runTime
+    int arrivalTime
+    int runTime
+    int runTimeRemaining
+    int completionTime
     int id
 
+jobs to do
+
+complete jobs
 
 shortest-remaining(jobs : list[job])
+    1 2
+    6 0
+    // greedy algorithm just pick the shortest runTimeRemaining
+
 FIFO(jobs : list[job])
+    // sort by arrival time
+
 round-robin(jobs : list[job], quantum : float = 1) 
+
+
     each of these print: "Job %3d -- Turnaround %3.2f  Wait %3.2f" for each job
     then print averages: "Average -- Turnaround %3.2f  Wait %3.2f"
 
+parser:
+    expected input = 
+            1 2
+            2 4
+            5 1
+            2 4
+        where left number = runTime, right number = arrivalTime

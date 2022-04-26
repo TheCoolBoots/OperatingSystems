@@ -345,12 +345,110 @@ Scheduler
                 A sends a message then wait()
                 B sends something back then wait()
                 works until a message gets blocked in transit
-            necessary conditions for deadlock
-                mutual exclusion
-                    one resource held by one process at a time
-                hold & wait
-                    holding one resource and waiting for another
-                no resource preemption
-                    resource can only be released voluntarily
-                circular wait
-                    a set of processes/threads {p0, p1, ... pn} such that Pi is waiting on resources used by P(i+1) % n
+
+Deadlocks
+    resource deadlocks
+
+    ex:
+        T1:             T2:
+        lock(m1)        lock(m2)
+        lock(m2)        lock(m1)
+
+    encapsulation
+        v1.addall(v2) == v2.addall(v1)
+        except locks get called in a different order
+
+    necessary conditions for deadlock
+        mutual exclusion
+            one resource held by one process at a time
+        hold & wait
+            holding one resource and waiting for another
+        no resource preemption
+            resource can only be released voluntarily
+        circular wait
+            a set of processes/threads {p0, p1, ... pn} such that Pi is waiting on resources used by P(i+1) % n
+
+        cannot deadlock if all of these are not met
+
+    how to handle deadlock:
+        1. prevention: ensure deadlock can never occur
+            break one of the conditions necessary for deadlock
+        2. avoidance: deadlock is possible, but OS has info to avoid it
+        3. detection: allow deadlock, but detect and recover from it
+        4. Ostrich algorithm: head in the sand, pray
+            do nothing
+
+        most common = Ostrich
+            Prevention is second most common but is often voluntary
+
+    Prevention
+        mutual exclusion
+            get rid of locks/waiting
+                can be done through a Monitor
+                ex. printer queue
+            lock/wait-free data structures
+                ** atomic instruction
+                int compare_and_swap(int *x, int expected, int new){
+                    if (*x == expected){
+                        *x = new;
+                        return 1;
+                    }
+                    else{
+                        return 0;
+                    }
+                }
+
+                atomicIncrement(value, amount){
+                    do{
+                        int old = value;
+                    }while(compare_and_swap(value, old, old+amount) == 0)
+                }
+        
+        hold and wait
+            a thread must request all resources at one time
+            request resources only when it has none
+            
+            T1              T2
+            lock(prevent)   lock(prevent)
+            lock(m1)        lock(m2)
+            lock(m2)        lock(m1)
+
+            unlock(prevent) unlock(prevent)
+
+            reduces concurrency;
+        
+        no preemption
+            reclaiming locks is problematic
+            ex stopping one job on 3d printer and giving control to another job
+                BAD
+
+            trylock()
+                try acquire lock
+                OR FAIL (instead of wait)
+
+            T1              T2
+            lock(m1)        lock(m2)
+            trylock(m2)     trylock(m1)
+            if(m2 == FAIL)  if(m1 == FAIL)
+                unlock m1       unlock m2
+                retry           retry
+
+        circular wait
+            impose a total ordering on how resources are acquired
+            through policy or programmatic solution
+            if (m1 > m2)
+                acquire(m1)
+                acquire(m2)
+            else
+                acquire(m2)
+                acquire(m1)
+
+    Avoidance
+        (via scheduling)
+        empower scheduler to schedule threads to avoid a dangerous or deadlock state
+
+        dijkstra's banker's algorithm
+            looks through matrix and sees if operation will result in deadlock state
+            O(m x n^2) runtime for m resources and n processes
+            run it every time a new process comes into the system
+            EXPENSIVE
