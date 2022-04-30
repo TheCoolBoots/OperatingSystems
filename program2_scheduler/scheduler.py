@@ -83,6 +83,7 @@ def simulate_rr(jobList: list[job], quantum: int):
             # else
                 # set current job to -1
             # move current job to completed jobs
+            # set currentCycles to 0
 
         # elif currentCycles == quantum
             # calculate turnaround time
@@ -90,6 +91,7 @@ def simulate_rr(jobList: list[job], quantum: int):
                 # schedule next job in queue
             # else
                 # set current job to -1
+            # set currentCycles = 0
         pass
 
 
