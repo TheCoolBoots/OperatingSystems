@@ -1,4 +1,5 @@
 
+from calendar import c
 from re import L
 
 
@@ -57,24 +58,41 @@ def simulate_rr(jobList: list[job], quantum: int):
     totalWaitTime = 0
     totalTurnaroundTime = 0
 
-    currentJobIndex = -1
+    currentJobIndex = None
     currentCycles = 0
 
     while len(jobList) > 0 and len(queuedJobs) > 0:
 
         # move all jobs that arrive at current time to queued jobs
+        while(jobList[0].arrrivalTime == currentTime):
+            queuedJobs.append(jobList.pop(0))
+        
 
         # if no job in queue, skip cycle
+        if(len(queuedJobs) == 0):
+            currentTime += 1
+            continue
+            
 
         # if no job is scheduled
             # schedule queuedJobs[0]
             # set currentCycles to 0
+        if(currentJobIndex == None):
+            currentJobIndex = 0
+            currentCycles = 0
         
         # simluate the cycle
             # add 1 to currentCycles
             # add 1 to currentTime
             # add 1 to wait time of all non-scheduled jobs
             # decrement remaining time for current job
+        currentCycles += 1
+        currentTime += 1
+        for i, job in enumerate(queuedJobs):
+            if (i != currentJobIndex):
+                job.waitTime += 1
+            
+        queuedJobs[currentJobIndex].remainingTime -= 1
 
         # if remaining time for current job = 0
             # calculate turnaround time
@@ -84,16 +102,33 @@ def simulate_rr(jobList: list[job], quantum: int):
                 # set current job to -1
             # move current job to completed jobs
             # set currentCycles to 0
+        if(queuedJobs[currentJobIndex].remainingTime == 0):
+            turnaroundTime = currentTime - queuedJobs[currentJobIndex].arrivalTime
+            totalTurnaroundTime += turnaroundTime
+                # print turnaround time, wait time
+            output.append(f'Job {queuedJobs[currentJobIndex].idNum} -- Turnaround {turnaroundTime}  Wait {queuedJobs[currentJobIndex].waitTime}')
+                # pop from queue
+            completedJobs.append(queuedJobs.pop(currentJobIndex))
+            if(len(queuedJobs) != 0):
+                currentJobIndex = (currentJobIndex -1) % len(queuedJobs)
+            else:
+                currentJobIndex = None
+            currentCycles = 0
+            
 
         # elif currentCycles == quantum
+        elif(currentCycles == quantum):
+            if(len(queuedJobs) > 1):
+                currentJobIndex = currentJobIndex % len(queuedJobs)
+            currentCycles = 0
             # calculate turnaround time
             # if queue is not empty
                 # schedule next job in queue
             # else
                 # set current job to -1
             # set currentCycles = 0
-        pass
-
+    for i, job in enumerate(completedJobs):
+        totalWaitTime += job.waitTime
 
     output.sort()
     output.append("Average -- Turnaround {:.2f}  Wait {:.2f}".format(totalTurnaroundTime/len(completedJobs), totalWaitTime/len(completedJobs)))
