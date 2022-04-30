@@ -7,7 +7,7 @@ class job:
         self.completionTime = None
         self.idNum = id
         self.scheduled = False
-        self.waitTime = None
+        self.waitTime = 0
 
     def __eq__(self, other):
         if type(other) != job:

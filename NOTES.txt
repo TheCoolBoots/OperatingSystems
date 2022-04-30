@@ -452,3 +452,15 @@ Deadlocks
             O(m x n^2) runtime for m resources and n processes
             run it every time a new process comes into the system
             EXPENSIVE
+            could be important in critical hardware/systems
+
+    Detection & Recovery
+        wait-for graph and traversal can indicate deadlock
+        heuristics
+            cpu interaction
+            process state
+            allows user to decide how to handle deadlock state
+        rollback
+            send a process back into a non-deadlocked state
+
+    typical solutions = write code following best practices and deal with a deadlock when it comes
