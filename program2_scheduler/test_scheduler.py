@@ -1,6 +1,5 @@
 import unittest
 
-import joblib
 
 from parser import parse_input, job
 from scheduler import simulate_fifo_scheduler
@@ -29,6 +28,22 @@ class test_scheduler(unittest.TestCase):
                     'Average -- Turnaround 7.80  Wait 4.20']
 
         actual = simulate_fifo_scheduler(jobList)
+        self.assertEqual(expected, actual)
+    
+
+    def test_rr(self):
+        jobList = parse_input('program2_scheduler/testFiles/RR.tst')
+
+        expected = ['Job 0 -- Turnaround 6  Wait 5', 
+                    'Job 1 -- Turnaround 6  Wait 2', 
+                    'Job 2 -- Turnaround 12  Wait 8', 
+                    'Job 3 -- Turnaround 12  Wait 6', 
+                    'Job 4 -- Turnaround 3  Wait 0', 
+                    'Average -- Turnaround 7.80  Wait 4.20']
+
+
+        actual = simulate_fifo_scheduler(jobList)
+        print(actual)
         self.assertEqual(expected, actual)
         
 

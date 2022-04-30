@@ -110,7 +110,7 @@ def simulate_rr(jobList: list[job], quantum: int):
                 # pop from queue
             completedJobs.append(queuedJobs.pop(currentJobIndex))
             if(len(queuedJobs) != 0):
-                currentJobIndex = (currentJobIndex -1) % len(queuedJobs)
+                currentJobIndex = currentJobIndex % len(queuedJobs)
             else:
                 currentJobIndex = None
             currentCycles = 0
