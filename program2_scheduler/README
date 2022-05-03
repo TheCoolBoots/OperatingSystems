@@ -1,6 +1,6 @@
 Andrew Lai and Jennifer Vazquez
 HOW TO RUN IT:
-
+python ./scheduler [jobs.txt] [-p] [Algorithm] [-q] [Quantom Value]
 
 1. For what types of workloads does SRTN deliver the same turnaround times as FIFO?
 When all the jobs have the same execution time. 
