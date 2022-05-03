@@ -1,0 +1,16 @@
+Andrew Lai and Jennifer Vazquez
+HOW TO RUN IT:
+
+
+1. For what types of workloads does SRTN deliver the same turnaround times as FIFO?
+When all the jobs have the same execution time. 
+2. For what types of workloads and quantum lengths does SRTN deliver the same response times as RR?
+A quantom length that is large enough that can make all the jobs run to completion. 
+3. What happens to response time with SRTN as job lengths increase? Can you use the simulator to demonstrate the trend? 
+The response time and jobs lengths have a correlation. If the jobs lengths increase so does the response time. 
+Run: python ./scheduler.py -p testFiles/FCFS.tst had an average of 3.2 wait time. 
+python ./scheduler.py -p testFiles/FCFS_LONG.tst had all execution times 3 times the amount of FCFC.tst, the wait time was 13.2 which was about 4 times the wait time of the previous test. 
+python ./scheduler.py -p testFiles/FCFS_LONGLONG.tst which doubles the execution time of the previous and 6 times the first test. The average is 28.2 which is about double the previous one. Our assumptions are correct. 
+4. What happens to response time with RR as quantum lengths increase? Can you write an equation that gives the worst-case response time, given N jobs?
+Has a inverse correlation therefore if the quantom length increases, the shorter so does the response time. It will reach a point where the quantom > longest job in which would become FCFS. 
+Equation: (N-1)Q / N (if all the jobs are the same execution length)
