@@ -25,4 +25,4 @@ class PageTable():
 
 class RAM():
     def __init__(self, frames:int):
-        self.frames : list[bytes]= [None] * frames
+        self.frames : list[bytes] = [None] * frames
