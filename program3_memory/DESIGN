@@ -1,0 +1,15 @@
+PAGE TABLE
+    entries[2^8]
+    PAGE TABLE ENTRY
+        int frameNum
+        bool valid
+
+TLB
+    frameNum[16]
+
+RAM(int numFrames)
+    frames[256*numFrames]
+
+
+
+        
