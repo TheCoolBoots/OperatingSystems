@@ -1,4 +1,3 @@
-from numpy import int16
 
 
 class TLBEntry():
