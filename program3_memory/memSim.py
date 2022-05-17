@@ -28,11 +28,13 @@ class MemSimulator():
         self.swap = [None * PT_ENTRIES]
 
 
+
     def loadInputFile(self, filepath:str):
         with open(filepath, 'r') as file:
             lines = file.readlines()
             self.memoryAccesses = list(map(lambda string: int(string.strip()), lines))
         return self.memoryAccesses
+
 
 
     def loadBackingStore(self, fp, pt_entries=PT_ENTRIES, page_size=PAGE_SIZE):
@@ -45,17 +47,22 @@ class MemSimulator():
                 self.backingStore.append(page)
         # print(self.backingStore[0].decode())
         return self.backingStore
-            
+
+
 
     def runMemSim():
         pass
 
+
+
     # returns (frameContents, accessedValue)
-    def memoryLookup(self, virtualAddress:int) -> Tuple(bytes, bytes):
+    def memoryLookup(self, virtualAddress:int) -> Tuple(bytes, bytes, int):
+        self.memoryAccesses.pop(0)
         pageTableNum = self.getPageTableNum(virtualAddress)
         frameNum = self.tlb.lookupPage(pageTableNum)
         if frameNum != None: # TLB Hit
-            return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)]
+            physAddr = int(format(frameNum, 'b') + format(self.getOffsetBits(virtualAddress), 'b'))
+            return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)], physAddr
         else:  # TLB Miss
             if self.pageTable[pageTableNum] == None: # if the page hasn't been accessed yet
                 page = self.backingStore[pageTableNum]
@@ -68,18 +75,22 @@ class MemSimulator():
                     self.tlb.updateTLB(TLBEntry(pageTableNum, frameNum))
                     self.ram.framesFilled += 1
 
-                    return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)]
+                    offsetBits = self.getOffsetBits(virtualAddress)
+                    physAddr = int(format(frameNum, 'b') + format(offsetBits, 'b'))
+
+                    return self.ram.frames[frameNum], self.ram.frames[frameNum][offsetBits], physAddr
             else: # page has been accessed previously
                 pageTableEntry = self.pageTable.getPageEntry(pageTableNum)
                 if pageTableEntry.valid:    
                     # page table hit
                     self.tlb.updateTLB(TLBEntry(pageTableNum, pageTableEntry.frameNum))
-                    return self.ram[pageTableEntry.frameNum], self.ram[pageTableEntry.frameNum][self.getOffsetBits(virtualAddress)]
+                    offsetBits = self.getOffsetBits(virtualAddress)
+                    physAddr = int(format(pageTableEntry.frameNum, 'b') + format(offsetBits, 'b'))
+                    return self.ram[pageTableEntry.frameNum], self.ram[pageTableEntry.frameNum][offsetBits], physAddr
                 else:   
                     # page is in swap
                     return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress))
 
-        self.memoryAccesses.pop(0)
             
 
     def pageMiss(self, pageIndex, offsetBits, hardMiss = False):
@@ -106,8 +117,12 @@ class MemSimulator():
 
         # update the TLB
         self.tlb.updateTLB(TLBEntry(pageIndex, relevantFrame))
+        
+        physAddr = int(format(relevantFrame, 'b') + format(offsetBits, 'b'))
 
-        return self.ram.frames[relevantFrame], self.ram.frames[relevantFrame][offsetBits]
+        return self.ram.frames[relevantFrame], self.ram.frames[relevantFrame][offsetBits], physAddr
+
+
 
     def getPageToEvict(self, pageReplaceQueue:list[int] = None):
         match self.pageRepAlg:
@@ -146,6 +161,7 @@ class MemSimulator():
 
     def getPageTableNum(self, virtualAddress):
         return virtualAddress >> (self.addressSizeBits - 8)
+
 
 
     def getOffsetBits(self, virtualAddress):
