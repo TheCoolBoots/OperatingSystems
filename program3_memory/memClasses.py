@@ -28,6 +28,7 @@ class TLB():
             self.entries.append(newEntry)
             self.numEntries += 1
 
+
     def inTLB(self, pageNum : int) -> bool:
         # searches for pageNum in self.entries
         if pageNum in self.entries:

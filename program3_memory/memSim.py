@@ -18,6 +18,11 @@ class MemSimulator():
         if backingStoreFP != None:
             self.loadBackingStore(backingStoreFP)
 
+        self.pageTable = PageTable()
+        self.tlb = TLB()
+        self.ram = RAM(numFrames)
+        self.swap = []
+
 
     def loadInputFile(self, filepath:str):
         with open(filepath, 'r') as file:
@@ -39,27 +44,27 @@ class MemSimulator():
     def runMemSim():
         pass
 
-    def memoryLookup(self, virtualAddress:int, tlb:TLB, pageTable:PageTable, ram:RAM, backingStore:list[bytes], swap:list[bytes]):
+    def memoryLookup(self, virtualAddress:int):
         pageTableNum = self.getPageTableNum(virtualAddress)
-        frameNum = tlb.lookupPage(pageTableNum)
+        frameNum = self.tlb.lookupPage(pageTableNum)
         if frameNum != None:
-            return ram[frameNum][self.getOffsetBits(virtualAddress)]
+            return self.ram[frameNum][self.getOffsetBits(virtualAddress)]
         else:
-            if pageTable[pageTableNum] == None: # if the page hasn't been loaded yet
-                page = backingStore[pageTableNum]
-                if ram.isFull():
+            if self.pageTable[pageTableNum] == None: # if the page hasn't been loaded yet
+                page = self.backingStore[pageTableNum]
+                if self.ram.isFull():
                     pass # replace with eviction algorithm
                 else:
-                    ram[ram.framesFilled] = page
-                    pageTable.updatePageTable(pageTableNum, ram.framesFilled, True)
-                    tlb.updateTLB(TLBEntry(pageTableNum, ram.framesFilled))
-                    ram.framesFilled += 1
+                    self.ram[self.ram.framesFilled] = page
+                    self.pageTable.updatePageTable(pageTableNum, self.ram.framesFilled, True)
+                    self.tlb.updateTLB(TLBEntry(pageTableNum, self.ram.framesFilled))
+                    self.ram.framesFilled += 1
             else:
-                pageTableEntry = pageTable.getPageEntry(pageTableNum)
+                pageTableEntry = self.pageTable.getPageEntry(pageTableNum)
                 if pageTableEntry.valid:
-                    return ram[pageTableEntry.frameNum][self.getOffsetBits(virtualAddress)]
+                    return self.ram[pageTableEntry.frameNum][self.getOffsetBits(virtualAddress)]
                 else:
-                    page = swap[pageTableNum]
+                    page = self.swap[pageTableNum]
                     pass # replace with eviction algorithm
             
 
@@ -71,11 +76,9 @@ class MemSimulator():
                 return evictPage
             case 'LRU':
                 evictPage = pageReplaceQueue.pop(0) 
-                indexCounter = 0
-                for element in pageReplaceQueue:
+                for i, element in enumerate(pageReplaceQueue):
                     if element == evictPage:
-                        pageReplaceQueue.pop(indexCounter)
-                    indexCounter = indexCounter + 1
+                        pageReplaceQueue.pop(i)
                 return evictPage
             case 'OPT':
                 # input
