@@ -1,8 +1,15 @@
 from memClasses import *
 
+def loadInputFile(filepath:str)->list[int]:
+    inputList = []
 
-def loadInputFile(filepath:str):
-    pass
+    with open(filepath, 'r') as inputFile:
+        id = 0
+        for line in inputFile.readlines():
+            inputList.append(line)
+            id += 1
+
+    return inputList
 
 def initializeSystem(pageReplacementAlgorithm:str, RAMSize:int):
     pass
