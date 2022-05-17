@@ -1,6 +1,7 @@
 from math import log2
 from memClasses import *
 
+<<<<<<< HEAD
 PAGE_SIZE = 256
 PT_ENTRIES = 256
 TLB_ENTRIES = 16
@@ -15,6 +16,18 @@ class MemSimulator():
             self.loadInputFile(inputFile)
         if backingStoreFP != None:
             self.loadBackingStore(backingStoreFP)
+=======
+def loadInputFile(filepath:str)->list[int]:
+    inputList = []
+
+    with open(filepath, 'r') as inputFile:
+        id = 0
+        for line in inputFile.readlines():
+            inputList.append(line)
+            id += 1
+
+    return inputList
+>>>>>>> 662a12d1e14ec867d9fbdce9f91ecac86785fea5
 
 
     def loadInputFile(self, filepath:str):

@@ -29,6 +29,13 @@ class TLB():
             self.numEntries += 1
 
 
+    def inTLB(self, pageNum : int) -> bool:
+        # searches for pageNum in self.entries
+        if pageNum in self.entries:
+            return True
+        else:
+            return False
+        
 class PageTableEntry():
     def __init__(self, frameNum : int,  valid : bool = False):
         self.frameNum = frameNum

@@ -27,3 +27,4 @@ memoryLookup(int virAddr) -> int word@PhysAddr
 				set pageTable[virAddr[0:8]] to index of evicted frame
 				set pageTable[virAddr[0:8]] valid bit to 1
 				
+				
