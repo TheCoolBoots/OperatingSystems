@@ -9,10 +9,6 @@ class TLB():
     def __init__(self) -> None:
         self.entries : list[TLBEntry] = [None] * 16 
 
-   class TLB():
-    def __init__(self) -> None:
-        self.entries : list[TLBEntry] = [None] * 16 
-
     def inTLB(self, pageNum : int) -> bool:
         # searches for pageNum in self.entries
         if pageNum in self.entries:

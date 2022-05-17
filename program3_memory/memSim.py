@@ -4,10 +4,8 @@ def loadInputFile(filepath:str)->list[int]:
     inputList = []
 
     with open(filepath, 'r') as inputFile:
-        id = 0
         for line in inputFile.readlines():
-            inputList.append(line)
-            id += 1
+            inputList.append(int(line))
 
     return inputList
 
@@ -21,5 +19,21 @@ def memoryLookup(virtualAddress:int, tlb:list[TLBEntry], pageTable:list[PageTabl
     pass
 
 def getPageToEvict(physicalAddress:int, pageReplacementAlgorithm:str, pageReplaceQueue:list[int]):
-    pass
+    match pageReplacementAlgorithm:
+        case 'FIFO':
+            evictPage = pageReplaceQueue.pop(0)
+            pageReplaceQueue.append(physicalAddress)
+            return evictPage
+        case 'LRU':
+            evictPage = pageReplaceQueue.pop(0) 
+
+            indexCounter = 0
+            for element in pageReplaceQueue:
+                if element == evictPage:
+                    pageReplaceQueue.pop(indexCounter)
+                indexCounter = indexCounter + 1
+
+            return evictPage
+        case 'OPT':
+
 
