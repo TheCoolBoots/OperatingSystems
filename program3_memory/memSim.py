@@ -1,4 +1,5 @@
 from operator import index
+from typing import Tuple
 from memClasses import *
 from math import log2
 from memClasses import *
@@ -15,22 +16,16 @@ class MemSimulator():
         self.numFrames = numFrames
         self.RAMSizeBytes = numFrames * 256
         self.addressSizeBits = int(log2(numFrames))
+
         if inputFile != None:
             self.loadInputFile(inputFile)
         if backingStoreFP != None:
             self.loadBackingStore(backingStoreFP)
 
-<<<<<<< HEAD
         self.pageTable = PageTable()
         self.tlb = TLB()
         self.ram = RAM(numFrames)
         self.swap = [None * PT_ENTRIES]
-=======
-        self.pageTable : PageTable = PageTable()
-        self.tlb : TLB = TLB()
-        self.ram : RAM = RAM(numFrames)
-        self.swap = []
->>>>>>> b17661178f65275ea22166177cddea94eaff228d
 
 
     def loadInputFile(self, filepath:str):
@@ -55,35 +50,67 @@ class MemSimulator():
     def runMemSim():
         pass
 
-
-    def memoryLookup(self, virtualAddress:int):
+    # returns (frameContents, accessedValue)
+    def memoryLookup(self, virtualAddress:int) -> Tuple(bytes, bytes):
         pageTableNum = self.getPageTableNum(virtualAddress)
         frameNum = self.tlb.lookupPage(pageTableNum)
-        if frameNum != None:
-            return self.ram[frameNum][self.getOffsetBits(virtualAddress)]
-        else:
-            if self.pageTable[pageTableNum] == None: # if the page hasn't been loaded yet
+        if frameNum != None: # TLB Hit
+            return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)]
+        else:  # TLB Miss
+            if self.pageTable[pageTableNum] == None: # if the page hasn't been accessed yet
                 page = self.backingStore[pageTableNum]
                 if self.ram.isFull():
-                    pass # replace with eviction algorithm
+                    return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress), True)
                 else:
-                    self.ram[self.ram.framesFilled] = page
-                    self.pageTable.updatePageTable(pageTableNum, self.ram.framesFilled, True)
-                    self.tlb.updateTLB(TLBEntry(pageTableNum, self.ram.framesFilled))
+                    frameNum = self.ram.framesFilled
+                    self.ram.frames[frameNum] = page
+                    self.pageTable.updatePageTable(pageTableNum, frameNum, True)
+                    self.tlb.updateTLB(TLBEntry(pageTableNum, frameNum))
                     self.ram.framesFilled += 1
-            else:
+
+                    return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)]
+            else: # page has been accessed previously
                 pageTableEntry = self.pageTable.getPageEntry(pageTableNum)
-                if pageTableEntry.valid:    # page table hit
-                    self.pageTable.updatePageTable(pageTableNum, pageTableEntry.frameNum, True)
-                    return self.ram[pageTableEntry.frameNum][self.getOffsetBits(virtualAddress)]
-                else:
-                    page = self.swap[pageTableNum]
-                    pass # replace with eviction algorithm
+                if pageTableEntry.valid:    
+                    # page table hit
+                    self.tlb.updateTLB(TLBEntry(pageTableNum, pageTableEntry.frameNum))
+                    return self.ram[pageTableEntry.frameNum], self.ram[pageTableEntry.frameNum][self.getOffsetBits(virtualAddress)]
+                else:   
+                    # page is in swap
+                    return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress))
+
         self.memoryAccesses.pop(0)
             
 
-    def getPageToEvict(self, pageReplacementAlgorithm:str, pageReplaceQueue:list[int]):
-        match pageReplacementAlgorithm:
+    def pageMiss(self, pageIndex, offsetBits, hardMiss = False):
+        if hardMiss:
+            pageIn = self.backingStore[pageIndex]
+        else:
+            pageIn = self.swap[pageIndex]
+
+        # get page number of page to evict from RAM
+        pageNumToReplace = self.getPageToEvict()
+
+        # get the frame number that is housing the evictee
+        relevantFrame = self.pageTable.getPageEntry(pageNumToReplace).frameNum
+
+        # set the evictee's swap to the contents in ram
+        self.swap[pageNumToReplace] = self.ram.frames[relevantFrame]
+
+        # set the frame to the page retreived from swap or backing store
+        self.ram.frames[relevantFrame] = pageIn
+
+        # update the page table
+        self.pageTable.updatePageTable(pageNumToReplace, relevantFrame, False)
+        self.pageTable.updatePageTable(pageIndex, relevantFrame, True)
+
+        # update the TLB
+        self.tlb.updateTLB(TLBEntry(pageIndex, relevantFrame))
+
+        return self.ram.frames[relevantFrame], self.ram.frames[relevantFrame][offsetBits]
+
+    def getPageToEvict(self, pageReplaceQueue:list[int] = None):
+        match self.pageRepAlg:
             case 'FIFO':
                 evictPage = pageReplaceQueue.pop(0)
                 return evictPage
