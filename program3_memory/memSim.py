@@ -1,11 +1,12 @@
 from memClasses import *
-
 from math import log2
 from memClasses import *
+
 
 PAGE_SIZE = 256
 PT_ENTRIES = 256
 TLB_ENTRIES = 16
+
 
 class MemSimulator():
     def __init__(self, pageReplacementAlgorithm:str, numFrames:int, backingStoreFP:str = None, inputFile:str = None) -> None:
@@ -21,7 +22,7 @@ class MemSimulator():
         self.pageTable = PageTable()
         self.tlb = TLB()
         self.ram = RAM(numFrames)
-        self.swap = []
+        self.swap = [None * PT_ENTRIES]
 
 
     def loadInputFile(self, filepath:str):
@@ -35,14 +36,17 @@ class MemSimulator():
         self.backingStore = []
         with open(fp, 'rb') as f:
             raw = f.read()
-            for i in range(0, pt_entries-1):
+            # print(raw)
+            for i in range(0, pt_entries):
                 page = raw[i*page_size: (i+1)*page_size]
                 self.backingStore.append(page)
+        # print(self.backingStore[0].decode())
         return self.backingStore
             
 
     def runMemSim():
         pass
+
 
     def memoryLookup(self, virtualAddress:int):
         pageTableNum = self.getPageTableNum(virtualAddress)
@@ -61,7 +65,8 @@ class MemSimulator():
                     self.ram.framesFilled += 1
             else:
                 pageTableEntry = self.pageTable.getPageEntry(pageTableNum)
-                if pageTableEntry.valid:
+                if pageTableEntry.valid:    # page table hit
+                    self.pageTable.updatePageTable(pageTableNum, pageTableEntry.frameNum, True)
                     return self.ram[pageTableEntry.frameNum][self.getOffsetBits(virtualAddress)]
                 else:
                     page = self.swap[pageTableNum]
