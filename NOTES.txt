@@ -464,3 +464,152 @@ Deadlocks
             send a process back into a non-deadlocked state
 
     typical solutions = write code following best practices and deal with a deadlock when it comes
+
+
+
+File systems
+    User Space
+        < System Calls: Read, Write, Open/Close, Trunc
+
+    Operating System
+        Memory manager
+        Virtual File System - sits above Disk File System
+            where IO system calls are first serviced; handles initial call
+            interface between all different types of file systems in the system
+            provides consistency through different file systems
+        Disk File System - executes IO system calls
+            file + metadata gets organized into logical blocks for BDD
+            forms: ext4, NTFS, AFS+, FAT32, etc.
+            organizes data
+            ** may be multiple Disk File Systems in a system; almost definitely are multiple
+        Block Device Driver (BDD) - speaks to storage devices
+            provides interface for logical blocks
+
+    Storage Devices
+        SSD/HDD
+
+    
+    Disk partitioning
+        break hard drive into mutiple Disk File Systems
+        first block = master boot record
+            hold information to initialize file system
+            have to know where the operating system is to start a program
+            also has the partition table
+                what are partitions on disk and which one holds the OS
+            BIOS is told where MBR is which has Partition Table which has location of OS
+        
+        Disk File System Structure
+            can vary greatly but commonalities between unix file systems
+
+            | super block | free space management | INode Table | Root Directory | Data Blocks (Files-Directories-Links-etc.)
+
+            super block
+                contains file system-wide metadata
+                    # of files
+                    # of free/allocated blocks
+                    FS type (AKA magic number) - decoder for magic number lives in fs.h 
+                    time/access information
+                    consistency (did this file system get unmounted cleanly or is it maybe broken?)
+
+            free space management
+                which blocks are allocated?
+            
+            INode
+                per-file metadata
+                every file has 1 INode
+                stores location of the data blocks for given file
+                access permissions
+                ownership
+                file sizes
+                reference count - how many names point to this INode
+
+            Directory(special file)
+                contents = (name, INode #) tuples = directory entries (dirents)
+
+            echo "hi!" > foo.txt
+                block gets allocated for "hi!"
+                inode gets allocated that points to said block
+                (name, inode pointer) with (foo.txt, &inode) gets created in cwd
+
+            Root Directory
+                by convention is entry 2 in INode table
+
+            Lookup operation
+                find file starting at the root directory
+                very expensive
+                ex. /usr/home/znjp/foo.txt
+                go to root directory
+                read its INode
+                read the data blocks
+                look for usr/
+                read its INode
+                read the usr/ data blocks
+                etc. etc. etc.
+
+                every lookup has AT LEAST 2 IO operations
+                    read inode then read inode's data blocks
+
+                directory entry cache
+                    take advantage of spacial locality
+                    cache the INode of /usr/home/znjp/ b/c next operation will probably be something like
+                    /usr/home/znjp/bar.txt
+                    managed by virtual file system
+                    makes it so only first lookup takes a long time
+
+
+        Virtual File System
+            provides:
+                1. acts as switching layer for Disk File Systems
+                2. uniform interface and namespace
+                3. caching layer (in-memory FS objects)
+            
+            Example:
+                /dev/hda1   # hard disk ** root fs
+                /dev/sda1   # ssd
+                /dev/cdrom  # CD
+                /dev/fd0    # floppy disk
+
+                mounting = initializing a device's file system
+                mount /dev/fd0 /mnt/floppy
+                virtual file system takes storage device and mapping into namespace
+                    integrates different file systems
+                ANY file can be configured to be a file system and then re-mounted to another location
+
+
+    Disk File System Implementations
+        needs:
+        1. superblock
+        2. INodes   (+ support for different file types)
+        3. Data Blocks 
+
+        metadata:
+        clean/dirty data
+        consistent/inconsistent data
+        which objects allocated/unallocated
+
+        considerations:
+        device limitations/requirements/characteristics
+        directory structures
+        block indexing/multi-level indexing
+            contiguous allocation for good sequential performance
+                will get external fragmentation though
+            linked allocation
+                each block stores a pointer to next block
+                limited to ONLY sequential access
+                might not lead to good spatial locality (might not matter for SSD's)
+            indexing
+                INode
+                | inode #
+                | perm bits
+                | time
+                | index into logical HDD
+                | i1
+                | i2
+                ...
+                | in
+
+                advantages: avoids external fragmentation (allocating blocks)
+                    don't have to do sequential access
+                    can use allocation strategies that keep data close together
+                disadvantages: size of the inode can get pretty big and are limited in size
+                    fix with multi-level indexing
