@@ -1,3 +1,4 @@
+from operator import index
 from memClasses import *
 from math import log2
 from memClasses import *
@@ -19,10 +20,17 @@ class MemSimulator():
         if backingStoreFP != None:
             self.loadBackingStore(backingStoreFP)
 
+<<<<<<< HEAD
         self.pageTable = PageTable()
         self.tlb = TLB()
         self.ram = RAM(numFrames)
         self.swap = [None * PT_ENTRIES]
+=======
+        self.pageTable : PageTable = PageTable()
+        self.tlb : TLB = TLB()
+        self.ram : RAM = RAM(numFrames)
+        self.swap = []
+>>>>>>> b17661178f65275ea22166177cddea94eaff228d
 
 
     def loadInputFile(self, filepath:str):
@@ -71,13 +79,13 @@ class MemSimulator():
                 else:
                     page = self.swap[pageTableNum]
                     pass # replace with eviction algorithm
+        self.memoryAccesses.pop(0)
             
 
-    def getPageToEvict(self, physicalAddress:int, pageReplacementAlgorithm:str, pageReplaceQueue:list[int]):
+    def getPageToEvict(self, pageReplacementAlgorithm:str, pageReplaceQueue:list[int]):
         match pageReplacementAlgorithm:
             case 'FIFO':
                 evictPage = pageReplaceQueue.pop(0)
-                pageReplaceQueue.append(physicalAddress)
                 return evictPage
             case 'LRU':
                 evictPage = pageReplaceQueue.pop(0) 
@@ -86,8 +94,27 @@ class MemSimulator():
                         pageReplaceQueue.pop(i)
                 return evictPage
             case 'OPT':
-                # input
-                pass
+                # make a subset of the elements that have valid bit = 0
+                subsetList = []
+                for element in self.pageTable:
+                    if element.valid:
+                        subsetList.append(element)
+                
+                # make a copy of the memory accesses
+                accesses = self.memoryAccesses.copy()
+
+                for i, accessID in enumerate(accesses):
+                    if len(subsetList) == 1:
+                        break
+                    try:
+                        subsetList.remove(accessID)
+                    except:
+                        pass
+                
+                # remove the last used mem (the only element in QCopy)
+                evictPage = subsetList[0]
+                return evictPage
+
 
 
     def getPageTableNum(self, virtualAddress):
