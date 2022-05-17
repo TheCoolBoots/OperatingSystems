@@ -27,7 +27,9 @@ class MemSimulator():
         self.pageTable = PageTable()
         self.tlb = TLB()
         self.ram = RAM(numFrames)
-        self.swap = [None * PT_ENTRIES]
+        self.swap = [None] * PT_ENTRIES
+
+        self.runMemSim()
 
 
 
@@ -77,7 +79,7 @@ class MemSimulator():
             physAddr = int(format(frameNum, 'b') + format(self.getOffsetBits(virtualAddress), 'b'))
             return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)], physAddr
         else:  # TLB Miss
-            if self.pageTable[pageTableNum] == None: # if the page hasn't been accessed yet
+            if self.pageTable.entries[pageTableNum] == None: # if the page hasn't been accessed yet
                 page = self.backingStore[pageTableNum]
                 if self.ram.isFull():
                     return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress), True)
@@ -181,7 +183,7 @@ class MemSimulator():
         return int('1'*(self.addressSizeBits - 8)) & virtualAddress
 
 
-memSim = MemSimulator("hello", 2048, "BACKING_STORE.bin", "tst")
+#memSim = MemSimulator("hello", 2048, "BACKING_STORE.bin", "tst")
 # memSim.loadInputFile("tst")
 # print(bin(memSim.getPageTableNum(0b11100000000)))
 # print(memSim.backingStore[0])
