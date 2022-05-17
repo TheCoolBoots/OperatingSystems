@@ -1,0 +1,29 @@
+memoryLookup(int virAddr) -> int word@PhysAddr
+	if virAddr[0:8] in TLB		# TLB Hit
+		# word is already in RAM
+		build PhysAddr from TLB entry and offset
+		return word@PhysAddr
+	else		# TLB miss
+		if pageTable[virAddr[0:8]] hasn't been loaded	# page table miss
+			neededPage = backingStore[virAddr[0:8]]
+			if RAM is not full
+				place at next empty frame
+				set pageTable[virAddr[0:8]] to index of next empty frame
+				set pageTable[virAddr[0:8]] valid bit to 1
+				updateTLB()
+			else
+				# use eviction policy to decide which physical frame gets moved to swap
+				set evicted page table entry valid bit to 0
+				set pageTable[virAddr[0:8]] to index of evicted frame
+				set pageTable[virAddr[0:8]] valid bit to 1
+		else:
+			if pageTable[virAddr[0:8]] is valid 	# page table hit
+				build PhysAddr from TLB entry and offset
+				return word@PhysAddr
+			else:		# page table miss
+				neededPage = swap.getPage(virAddr[0:8])
+				# use eviction policy to decide which physical frame gets moved to swap
+				set evicted page table entry valid bit to 0
+				set pageTable[virAddr[0:8]] to index of evicted frame
+				set pageTable[virAddr[0:8]] valid bit to 1
+				
