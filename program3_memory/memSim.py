@@ -192,15 +192,11 @@ if __name__ == '__main__':
     match sys.argv:
         case [pyFile, inputFile]:
             memSim = MemSimulator("FIFO", 256, "BACKING_STORE.bin", inputFile)
-            pass
-        case [pyFile, inputFile, param1a, param1b]:
-            memSim = MemSimulator(param1b, param1a, "BACKING_STORE.bin", inputFile)
-            pass
-        case [pyFile, inputFile, param1a]:
-            if param1a == 'FIFO' or param1a == "LRU" or param1a == "OPT":
-                memSim = MemSimulator(param1a, 256, "BACKING_STORE.bin", inputFile)
+        case [pyFile, inputFile, numOfFrames, algor]:
+            if int(numOfFrames) > 256:
+                print('ERROR')
             else:
-                memSim = MemSimulator("FIFO", param1a, "BACKING_STORE.bin", inputFile)
+                memSim = MemSimulator(algor, int(numOfFrames), "BACKING_STORE.bin", inputFile)
         case default:
             print('ERROR: unrecognized input. Use format python memSim.py <reference-sequence-file.txt> <FRAMES> <PRA>')
 
