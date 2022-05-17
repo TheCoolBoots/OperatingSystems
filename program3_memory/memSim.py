@@ -1,3 +1,5 @@
+import sys 
+
 from operator import index
 from typing import Tuple
 from memClasses import *
@@ -50,14 +52,25 @@ class MemSimulator():
 
 
 
-    def runMemSim():
-        pass
+    def runMemSim(self):
+        # while accesses is not empty 
+        #print
+        #For every address in the given addresses file, print one line of comma-separated fields, consisting of
+        #The full address (from the reference file)
+        #The value of the byte referenced (1 signed integer)
+        #The physical memory frame number (one positive integer)
+        #The content of the entire frame (256 bytes in hex ASCII characters, no spaces in between)
+        #new line character
 
+      
+        while len(self.memoryAccesses) != 0:
+            currentVA = self.memoryAccesses[0]
+            frameContent, accessedByte, physicalMem = self.memoryLookup(self.memoryAccesses[0])
+            print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
 
-
-    # returns (frameContents, accessedValue)
-    def memoryLookup(self, virtualAddress:int) -> Tuple(bytes, bytes, int):
-        self.memoryAccesses.pop(0)
+        
+#(memory content, accessed value)
+    def memoryLookup(self, virtualAddress:int):
         pageTableNum = self.getPageTableNum(virtualAddress)
         frameNum = self.tlb.lookupPage(pageTableNum)
         if frameNum != None: # TLB Hit
@@ -173,4 +186,21 @@ memSim = MemSimulator("hello", 2048, "BACKING_STORE.bin", "tst")
 # print(bin(memSim.getPageTableNum(0b11100000000)))
 # print(memSim.backingStore[0])
 
+# memSim <reference-sequence-file.txt> <FRAMES> <PRA>
+# For defaults use 256 frames, and FIFO as the page replacement algorithm.
+if __name__ == '__main__':
+    match sys.argv:
+        case [pyFile, inputFile]:
+            memSim = MemSimulator("FIFO", 256, "BACKING_STORE.bin", inputFile)
+            pass
+        case [pyFile, inputFile, param1a, param1b]:
+            memSim = MemSimulator(param1b, param1a, "BACKING_STORE.bin", inputFile)
+            pass
+        case [pyFile, inputFile, param1a]:
+            if param1a == 'FIFO' or param1a == "LRU" or param1a == "OPT":
+                memSim = MemSimulator(param1a, 256, "BACKING_STORE.bin", inputFile)
+            else:
+                memSim = MemSimulator("FIFO", param1a, "BACKING_STORE.bin", inputFile)
+        case default:
+            print('ERROR: unrecognized input. Use format python memSim.py <reference-sequence-file.txt> <FRAMES> <PRA>')
 
