@@ -43,7 +43,7 @@ class PageTableEntry():
         
 class PageTable():
     def __init__(self):
-        self.entries : list[PageTableEntry] = [None] * (2 ** 8)
+        self.entries : list[PageTableEntry] = [None] * (2 ** 8) # 2 ^ 8 = 256
 
     def updatePageTable(self, pageIndex, frameNum, valid):
         self.entries[pageIndex] = PageTableEntry(frameNum, valid)

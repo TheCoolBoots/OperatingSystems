@@ -1,8 +1,5 @@
 import sys 
 
-from operator import index
-from typing import Tuple
-from memClasses import *
 from math import log2
 from memClasses import *
 
@@ -17,7 +14,7 @@ class MemSimulator():
         self.pageRepAlg = pageReplacementAlgorithm
         self.numFrames = numFrames
         self.RAMSizeBytes = numFrames * 256
-        self.addressSizeBits = int(log2(numFrames))
+        self.addressSizeBits = 16
 
         if inputFile != None:
             self.loadInputFile(inputFile)
@@ -29,7 +26,12 @@ class MemSimulator():
         self.ram = RAM(numFrames)
         self.swap = [None] * PT_ENTRIES
 
-        self.runMemSim()
+        self.tlbMisses = 0
+        self.tlbHits = 0
+        self.pageMisses = 0
+        self.pageHits = 0
+
+        # self.runMemSim()
 
 
 
@@ -37,6 +39,7 @@ class MemSimulator():
         with open(filepath, 'r') as file:
             lines = file.readlines()
             self.memoryAccesses = list(map(lambda string: int(string.strip()), lines))
+            self.numMemAccesses = len(self.memoryAccesses)
         return self.memoryAccesses
 
 
@@ -64,36 +67,52 @@ class MemSimulator():
         #The content of the entire frame (256 bytes in hex ASCII characters, no spaces in between)
         #new line character
 
-      
         while len(self.memoryAccesses) != 0:
             currentVA = self.memoryAccesses[0]
             frameContent, accessedByte, physicalMem = self.memoryLookup(self.memoryAccesses[0])
             print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
 
+        print(f'Number of Translated = {self.numMemAccesses}')
+        print(f'Page Faults = {self.pageMisses}')
+        print(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
+        print(f'TLB Hits = {self.tlbHits}')
+        print(f'TLB Misses ={self.tlbMisses}')
+        print(f'TLB Hit Rate = {format(self.tlbMisses/self.numMemAccesses, ".3f")}')
+
+
         
-#(memory content, accessed value)
+    #(memory content, accessed value)
     def memoryLookup(self, virtualAddress:int):
         pageTableNum = self.getPageTableNum(virtualAddress)
         frameNum = self.tlb.lookupPage(pageTableNum)
         if frameNum != None: 
             # TLB Hit
+            self.tlbHits += 1
             physAddr = int(format(frameNum, 'b') + format(self.getOffsetBits(virtualAddress), 'b'))
             return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)], physAddr
         else:  
             # TLB Miss
+            self.tlbMisses += 1
             if self.pageTable.entries[pageTableNum] == None: # if the page hasn't been accessed yet
-                page = self.backingStore[pageTableNum]
+                self.pageMisses += 1
                 if self.ram.isFull():
                     # hard page miss
                     return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress), True)
                 else: 
                     # if ram isn't full, fill RAM sequentially
                     frameNum = self.ram.framesFilled
-                    self.ram.frames[frameNum] = page
+
+                    # load page from backing store and put in next unfilled frame
+                    self.ram.frames[frameNum] = self.backingStore[pageTableNum]
+
+                    # update page table
                     self.pageTable.updatePageTable(pageTableNum, frameNum, True)
+
+                    # update TLB
                     self.tlb.updateTLB(TLBEntry(pageTableNum, frameNum))
                     self.ram.framesFilled += 1
 
+                    # build physical address
                     offsetBits = self.getOffsetBits(virtualAddress)
                     physAddr = int(format(frameNum, 'b') + format(offsetBits, 'b'))
 
@@ -102,6 +121,7 @@ class MemSimulator():
                 pageTableEntry = self.pageTable.getPageEntry(pageTableNum)
                 if pageTableEntry.valid:    
                     # page table hit
+                    self.pageHits += 1
                     self.tlb.updateTLB(TLBEntry(pageTableNum, pageTableEntry.frameNum))
                     offsetBits = self.getOffsetBits(virtualAddress)
                     physAddr = int(format(pageTableEntry.frameNum, 'b') + format(offsetBits, 'b'))
@@ -114,6 +134,8 @@ class MemSimulator():
             
 
     def pageMiss(self, pageIndex, offsetBits, hardMiss = False):
+        self.pageMisses += 1
+
         if hardMiss:
             pageIn = self.backingStore[pageIndex]
         else:
@@ -180,12 +202,16 @@ class MemSimulator():
 
 
     def getPageTableNum(self, virtualAddress):
-        return virtualAddress >> (self.addressSizeBits - 8)
+
+        # 4k page size = 2 ^ 5 bytes
+        # 5 bits to address into 4k
+
+        return virtualAddress >> 8
 
 
 
     def getOffsetBits(self, virtualAddress):
-        return int('1'*(self.addressSizeBits - 8)) & virtualAddress
+        return int(255) & virtualAddress
 
 
 #memSim = MemSimulator("hello", 2048, "BACKING_STORE.bin", "tst")
