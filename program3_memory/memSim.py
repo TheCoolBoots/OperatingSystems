@@ -30,9 +30,7 @@ class MemSimulator():
         self.tlbHits = 0
         self.pageMisses = 0
         self.pageHits = 0
-
         
-
 
 
     def loadInputFile(self, filepath:str):
@@ -68,11 +66,10 @@ class MemSimulator():
         #new line character
 
         while len(self.memoryAccesses) != 0:
-           
             currentVA = self.memoryAccesses.pop(0)
-            frameContent, accessedByte, physicalMem = self.memoryLookup(currentVA)
-            #print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
-           
+            frameContent, accessedByte, physicalMem = self.memoryLookup(self.memoryAccesses[0])
+            # print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
+
         print(f'Number of Translated = {self.numMemAccesses}')
         print(f'Page Faults = {self.pageMisses}')
         print(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
@@ -232,6 +229,7 @@ if __name__ == '__main__':
                 print('ERROR')
             else:
                 memSim = MemSimulator(algor, int(numOfFrames), "BACKING_STORE.bin", inputFile)
+                memSim.runMemSim()
         case default:
             print('ERROR: unrecognized input. Use format python memSim.py <reference-sequence-file.txt> <FRAMES> <PRA>')
 

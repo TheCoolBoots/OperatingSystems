@@ -16,12 +16,11 @@ class test_scheduler(unittest.TestCase):
 
     def test_getPageTableNum(self):
 
-        memSim = MemSimulator(None, 1024) # 256 = 2^10
+        memSim = MemSimulator(None, 256) # 256 = 2^8
 
-        self.assertEqual(memSim.getPageTableNum(int('01111111', 2)), 3)
+        self.assertEqual(memSim.getPageTableNum(int('1111111111', 2)), 3)
+        self.assertEqual(memSim.getOffsetBits(int('11100000101', 2)), 5)
 
-
-    
 
 
 if __name__ == '__main__':
