@@ -28,6 +28,10 @@ class TLB():
             self.entries.append(newEntry)
             self.numEntries += 1
 
+    def removeTLBEntry(self, pageNum:int):
+        for i, entry in enumerate(self.entries):
+            if entry.pageNum == pageNum:
+                self.entries.pop(i)
 
     def inTLB(self, pageNum : int) -> bool:
         # searches for pageNum in self.entries

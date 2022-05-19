@@ -80,7 +80,8 @@ class MemSimulator():
         output.append(f'TLB Misses = {self.tlbMisses}')
         output.append(f'TLB Hit Rate = {format(self.tlbHits/self.numMemAccesses, ".3f")}')
 
-        print('\n'.join(output))
+        if not debugMode:
+            print('\n'.join(output))
 
         return output
 
@@ -100,11 +101,12 @@ class MemSimulator():
             # TLB Miss
             self.tlbMisses += 1
             if self.pageTable.entries[pageTableNum] == None: # if the page hasn't been accessed yet
-                self.pageMisses += 1
                 if self.ram.isFull():
                     # hard page miss
                     return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress), True)
                 else: 
+
+                    self.pageMisses += 1
 
                     if self.pageRepAlg == 'FIFO':
                         self.pageReplaceQueue.append(pageTableNum)
@@ -156,6 +158,7 @@ class MemSimulator():
 
         # get page number of page to evict from RAM
         pageNumToReplace = self.getPageToEvict(self.pageReplaceQueue)
+        self.tlb.removeTLBEntry(pageNumToReplace)
 
         # get the frame number that is housing the evictee
         relevantFrame = self.pageTable.getPageEntry(pageNumToReplace).frameNum
