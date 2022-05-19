@@ -67,15 +67,15 @@ class MemSimulator():
 
         while len(self.memoryAccesses) != 0:
             currentVA = self.memoryAccesses.pop(0)
-            frameContent, accessedByte, physicalMem = self.memoryLookup(self.memoryAccesses[0])
+            frameContent, accessedByte, physicalMem = self.memoryLookup(currentVA)
             if not debugMode:
                 print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
 
-        output = [f'Number of Translated = {self.numMemAccesses}']
+        output = [f'Number of Translated Addresses = {self.numMemAccesses}']
         output.append(f'Page Faults = {self.pageMisses}')
         output.append(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
         output.append(f'TLB Hits = {self.tlbHits}')
-        output.append(f'TLB Misses ={self.tlbMisses}')
+        output.append(f'TLB Misses = {self.tlbMisses}')
         output.append(f'TLB Hit Rate = {format(self.tlbMisses/self.numMemAccesses, ".3f")}')
 
         print('\n'.join(output))
