@@ -9,10 +9,10 @@ class TLBEntry():
         self.frameNum = frameNum
 
 class TLB():
-    def __init__(self) -> None:
+    def __init__(self, maxEntries = 16) -> None:
         self.entries : list[TLBEntry] = []
         self.numEntries = 0
-        self.maxEntries = 16
+        self.maxEntries = maxEntries
 
     def lookupPage(self, pageNum : int) -> bool:
         for entry in self.entries:

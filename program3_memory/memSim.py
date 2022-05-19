@@ -10,7 +10,7 @@ TLB_ENTRIES = 16
 
 
 class MemSimulator():
-    def __init__(self, pageReplacementAlgorithm:str, numFrames:int, backingStoreFP:str = None, inputFile:str = None) -> None:
+    def __init__(self, pageReplacementAlgorithm:str, numFrames:int, backingStoreFP:str = None, inputFile:str = None, tlbEntries = 16) -> None:
         self.pageRepAlg = pageReplacementAlgorithm
         self.numFrames = numFrames
         self.RAMSizeBytes = numFrames * 256
@@ -22,7 +22,7 @@ class MemSimulator():
             self.loadBackingStore(backingStoreFP)
 
         self.pageTable = PageTable()
-        self.tlb = TLB()
+        self.tlb = TLB(tlbEntries)
         self.ram = RAM(numFrames)
         self.swap = [None] * PT_ENTRIES
 
@@ -78,7 +78,7 @@ class MemSimulator():
         output.append(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
         output.append(f'TLB Hits = {self.tlbHits}')
         output.append(f'TLB Misses = {self.tlbMisses}')
-        output.append(f'TLB Hit Rate = {format(self.tlbHits/self.numMemAccesses, ".3f")}')
+        output.append(f'TLB Hit Rate = {format(self.tlbHits/self.tlbMisses, ".3f")}')
 
         if not debugMode:
             print('\n'.join(output))
@@ -137,7 +137,7 @@ class MemSimulator():
                     self.tlb.updateTLB(TLBEntry(pageTableNum, pageTableEntry.frameNum))
                     offsetBits = self.getOffsetBits(virtualAddress)
                     physAddr = int(format(pageTableEntry.frameNum, 'b') + format(offsetBits, 'b'))
-                    return self.ram[pageTableEntry.frameNum], self.ram[pageTableEntry.frameNum][offsetBits], physAddr
+                    return self.ram.frames[pageTableEntry.frameNum], self.ram.frames[pageTableEntry.frameNum][offsetBits], physAddr
                 else:   
                     # soft page miss
                     # page is in swap

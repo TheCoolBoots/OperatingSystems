@@ -84,19 +84,19 @@ class test_scheduler(unittest.TestCase):
 
         self.assertEqual(output, expected)
    
-    # def test_fifo5(self):
+    def test_fifo5(self):
 
-    #     memSim = MemSimulator("FIFO", 8, "BACKING_STORE.bin", 'fifo5.txt')
-    #     output = memSim.runMemSim(True)
+        memSim = MemSimulator("FIFO", 8, "BACKING_STORE.bin", 'fifo5.txt', 5)
+        actual = memSim.runMemSim(True)
 
-    #     expected = ['Number of Translated Addresses = 14', 
-    #                 'Page Faults = 11', 
-    #                 'Page Fault Rate = 1.000', 
-    #                 'TLB Hits = 1', 
-    #                 'TLB Misses = 13',
-    #                 'TLB Hit Rate = 0.077']
+        expected = ['Number of Translated Addresses = 14', 
+                    'Page Faults = 11', 
+                    'Page Fault Rate = 0.786', 
+                    'TLB Hits = 1', 
+                    'TLB Misses = 13',
+                    'TLB Hit Rate = 0.071']
 
-    #     self.assertEqual(output, expected)
+        self.assertEqual(actual, expected)
 
 
 if __name__ == '__main__':
