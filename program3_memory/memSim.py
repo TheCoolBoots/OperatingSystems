@@ -75,15 +75,19 @@ class MemSimulator():
     def memoryLookup(self, virtualAddress:int):
         pageTableNum = self.getPageTableNum(virtualAddress)
         frameNum = self.tlb.lookupPage(pageTableNum)
-        if frameNum != None: # TLB Hit
+        if frameNum != None: 
+            # TLB Hit
             physAddr = int(format(frameNum, 'b') + format(self.getOffsetBits(virtualAddress), 'b'))
             return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)], physAddr
-        else:  # TLB Miss
+        else:  
+            # TLB Miss
             if self.pageTable.entries[pageTableNum] == None: # if the page hasn't been accessed yet
                 page = self.backingStore[pageTableNum]
                 if self.ram.isFull():
+                    # hard page miss
                     return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress), True)
-                else:
+                else: 
+                    # if ram isn't full, fill RAM sequentially
                     frameNum = self.ram.framesFilled
                     self.ram.frames[frameNum] = page
                     self.pageTable.updatePageTable(pageTableNum, frameNum, True)
@@ -103,6 +107,7 @@ class MemSimulator():
                     physAddr = int(format(pageTableEntry.frameNum, 'b') + format(offsetBits, 'b'))
                     return self.ram[pageTableEntry.frameNum], self.ram[pageTableEntry.frameNum][offsetBits], physAddr
                 else:   
+                    # soft page miss
                     # page is in swap
                     return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress))
 
