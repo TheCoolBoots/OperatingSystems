@@ -31,6 +31,8 @@ class MemSimulator():
         self.pageMisses = 0
         self.pageHits = 0
 
+        self.pageReplaceQueue = []
+
 
 
     def loadInputFile(self, filepath:str):
@@ -103,6 +105,10 @@ class MemSimulator():
                     # hard page miss
                     return self.pageMiss(pageTableNum, self.getOffsetBits(virtualAddress), True)
                 else: 
+
+                    if self.pageRepAlg == 'FIFO':
+                        self.pageReplaceQueue.append(pageTableNum)
+
                     # if ram isn't full, fill RAM sequentially
                     frameNum = self.ram.framesFilled
 
@@ -138,6 +144,9 @@ class MemSimulator():
             
 
     def pageMiss(self, pageIndex, offsetBits, hardMiss = False):
+        if self.pageRepAlg == 'FIFO':
+            self.pageReplaceQueue.append(pageIndex)
+
         self.pageMisses += 1
 
         if hardMiss:
@@ -146,7 +155,7 @@ class MemSimulator():
             pageIn = self.swap[pageIndex]
 
         # get page number of page to evict from RAM
-        pageNumToReplace = self.getPageToEvict()
+        pageNumToReplace = self.getPageToEvict(self.pageReplaceQueue)
 
         # get the frame number that is housing the evictee
         relevantFrame = self.pageTable.getPageEntry(pageNumToReplace).frameNum
