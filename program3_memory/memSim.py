@@ -31,7 +31,7 @@ class MemSimulator():
         self.pageMisses = 0
         self.pageHits = 0
 
-        # self.runMemSim()
+        
 
 
 
@@ -68,10 +68,11 @@ class MemSimulator():
         #new line character
 
         while len(self.memoryAccesses) != 0:
-            currentVA = self.memoryAccesses[0]
-            frameContent, accessedByte, physicalMem = self.memoryLookup(self.memoryAccesses[0])
-            print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
-
+           
+            currentVA = self.memoryAccesses.pop(0)
+            frameContent, accessedByte, physicalMem = self.memoryLookup(currentVA)
+            #print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
+           
         print(f'Number of Translated = {self.numMemAccesses}')
         print(f'Page Faults = {self.pageMisses}')
         print(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
@@ -225,6 +226,7 @@ if __name__ == '__main__':
     match sys.argv:
         case [pyFile, inputFile]:
             memSim = MemSimulator("FIFO", 256, "BACKING_STORE.bin", inputFile)
+            memSim.runMemSim()
         case [pyFile, inputFile, numOfFrames, algor]:
             if int(numOfFrames) > 256:
                 print('ERROR')
