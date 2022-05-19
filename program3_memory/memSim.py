@@ -30,7 +30,7 @@ class MemSimulator():
         self.tlbHits = 0
         self.pageMisses = 0
         self.pageHits = 0
-        
+
 
 
     def loadInputFile(self, filepath:str):
@@ -55,7 +55,7 @@ class MemSimulator():
 
 
 
-    def runMemSim(self):
+    def runMemSim(self, debugMode = False):
         # while accesses is not empty 
         #print
         #For every address in the given addresses file, print one line of comma-separated fields, consisting of
@@ -68,14 +68,20 @@ class MemSimulator():
         while len(self.memoryAccesses) != 0:
             currentVA = self.memoryAccesses.pop(0)
             frameContent, accessedByte, physicalMem = self.memoryLookup(self.memoryAccesses[0])
-            # print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
+            if not debugMode:
+                print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
 
-        print(f'Number of Translated = {self.numMemAccesses}')
-        print(f'Page Faults = {self.pageMisses}')
-        print(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
-        print(f'TLB Hits = {self.tlbHits}')
-        print(f'TLB Misses ={self.tlbMisses}')
-        print(f'TLB Hit Rate = {format(self.tlbMisses/self.numMemAccesses, ".3f")}')
+        output = [f'Number of Translated = {self.numMemAccesses}']
+        output.append(f'Page Faults = {self.pageMisses}')
+        output.append(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
+        output.append(f'TLB Hits = {self.tlbHits}')
+        output.append(f'TLB Misses ={self.tlbMisses}')
+        output.append(f'TLB Hit Rate = {format(self.tlbMisses/self.numMemAccesses, ".3f")}')
+
+        print('\n'.join(output))
+
+        return output
+
 
 
         
