@@ -78,7 +78,7 @@ class MemSimulator():
         output.append(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
         output.append(f'TLB Hits = {self.tlbHits}')
         output.append(f'TLB Misses = {self.tlbMisses}')
-        output.append(f'TLB Hit Rate = {format(self.tlbHits/self.tlbMisses, ".3f")}')
+        output.append(f'TLB Hit Rate = {format(self.tlbHits/self.numMemAccesses, ".3f")}')
 
         if not debugMode:
             print('\n'.join(output))
