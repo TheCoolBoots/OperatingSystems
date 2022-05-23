@@ -98,6 +98,88 @@ class test_scheduler(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_lru1(self):
+
+        memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'lru1.txt')
+        actual = memSim.runMemSim(True)
+
+        expected = ['Number of Translated Addresses = 10', 
+                    'Page Faults = 10', 
+                    'Page Fault Rate = 1.000', 
+                    'TLB Hits = 0', 
+                    'TLB Misses = 10',
+                    'TLB Hit Rate = 0.000']
+
+
+        self.assertEqual(actual, expected)
+
+    def test_lru2(self):
+
+        memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'lru2.txt')
+        actual = memSim.runMemSim(True)
+
+        expected = ['Number of Translated Addresses = 10', 
+                    'Page Faults = 8', 
+                    'Page Fault Rate = 0.800', 
+                    'TLB Hits = 2', 
+                    'TLB Misses = 8',
+                    'TLB Hit Rate = 0.200']
+
+
+        self.assertEqual(actual, expected)
+
+    def test_lru3(self):
+
+        memSim = MemSimulator("LRU", 3, "BACKING_STORE.bin", 'lru3.txt')
+        actual = memSim.runMemSim(True)
+
+        expected = ['Number of Translated Addresses = 10', 
+                    'Page Faults = 10', 
+                    'Page Fault Rate = 1.000', 
+                    'TLB Hits = 0', 
+                    'TLB Misses = 10',
+                    'TLB Hit Rate = 0.000']
+
+
+
+        self.assertEqual(actual, expected)
+
+    
+
+    def test_opt1(self):
+
+        memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'opt1.txt')
+        actual = memSim.runMemSim(True)
+
+
+        expected = ['Number of Translated Addresses = 10', 
+                    'Page Faults = 7', 
+                    'Page Fault Rate = 0.700', 
+                    'TLB Hits = 3', 
+                    'TLB Misses = 7',
+                    'TLB Hit Rate = 0.300']
+
+
+        self.assertEqual(actual, expected)
+
+    
+    def test_opt2(self):
+
+        memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'opt2.txt')
+        actual = memSim.runMemSim(True)
+#10 requests, 9 faults, 9 misses, 1 hits
+
+        expected = ['Number of Translated Addresses = 10', 
+                    'Page Faults = 9', 
+                    'Page Fault Rate = 0.900', 
+                    'TLB Hits = 1', 
+                    'TLB Misses = 9',
+                    'TLB Hit Rate = 0.100']
+
+
+        self.assertEqual(actual, expected)
+
+
 
 if __name__ == '__main__':
     unittest.main()
