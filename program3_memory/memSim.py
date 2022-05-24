@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys 
 
 from math import log2
@@ -108,8 +109,9 @@ class MemSimulator():
 
                     self.pageMisses += 1
 
-                    if self.pageRepAlg == 'FIFO':
+                    if self.pageRepAlg == 'FIFO' or 'LRU' :
                         self.pageReplaceQueue.append(pageTableNum)
+                    
 
                     # if ram isn't full, fill RAM sequentially
                     frameNum = self.ram.framesFilled

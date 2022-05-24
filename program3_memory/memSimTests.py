@@ -134,50 +134,48 @@ class test_scheduler(unittest.TestCase):
         actual = memSim.runMemSim(True)
 
         expected = ['Number of Translated Addresses = 10', 
-                    'Page Faults = 10', 
-                    'Page Fault Rate = 1.000', 
-                    'TLB Hits = 0', 
-                    'TLB Misses = 10',
-                    'TLB Hit Rate = 0.000']
-
-
-
-        self.assertEqual(actual, expected)
-
-    
-
-    def test_opt1(self):
-
-        memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'opt1.txt')
-        actual = memSim.runMemSim(True)
-
-
-        expected = ['Number of Translated Addresses = 10', 
                     'Page Faults = 7', 
                     'Page Fault Rate = 0.700', 
                     'TLB Hits = 3', 
                     'TLB Misses = 7',
                     'TLB Hit Rate = 0.300']
 
-
         self.assertEqual(actual, expected)
 
     
-    def test_opt2(self):
 
-        memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'opt2.txt')
-        actual = memSim.runMemSim(True)
-#10 requests, 9 faults, 9 misses, 1 hits
+#     def test_opt1(self):
 
-        expected = ['Number of Translated Addresses = 10', 
-                    'Page Faults = 9', 
-                    'Page Fault Rate = 0.900', 
-                    'TLB Hits = 1', 
-                    'TLB Misses = 9',
-                    'TLB Hit Rate = 0.100']
+#         memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'opt1.txt')
+#         actual = memSim.runMemSim(True)
 
 
-        self.assertEqual(actual, expected)
+#         expected = ['Number of Translated Addresses = 10', 
+#                     'Page Faults = 7', 
+#                     'Page Fault Rate = 0.700', 
+#                     'TLB Hits = 3', 
+#                     'TLB Misses = 7',
+#                     'TLB Hit Rate = 0.300']
+
+
+#         self.assertEqual(actual, expected)
+
+    
+#     def test_opt2(self):
+
+#         memSim = MemSimulator("LRU", 5, "BACKING_STORE.bin", 'opt2.txt')
+#         actual = memSim.runMemSim(True)
+# #10 requests, 9 faults, 9 misses, 1 hits
+
+#         expected = ['Number of Translated Addresses = 10', 
+#                     'Page Faults = 9', 
+#                     'Page Fault Rate = 0.900', 
+#                     'TLB Hits = 1', 
+#                     'TLB Misses = 9',
+#                     'TLB Hit Rate = 0.100']
+
+
+#         self.assertEqual(actual, expected)
 
 
 
