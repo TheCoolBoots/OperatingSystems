@@ -197,7 +197,7 @@ class MemSimulator():
                 evictPage = pageReplaceQueue.pop(0) 
                 return evictPage
             case 'OPT':
-                # make a subset of the elements that have valid bit = 0
+                # make a subset of the elements that have valid bit = True
                 subsetList = []
                 for i, element in enumerate(self.pageTable.entries):
                     if element != None and element.valid:
@@ -205,12 +205,13 @@ class MemSimulator():
                 
                 # make a copy of the memory accesses
                 accesses = self.memoryAccesses.copy()
+                accesses = list(map(self.getPageTableNum, accesses))
 
-                for i, accessID in enumerate(accesses):
+                for i, pageNum in enumerate(accesses):
                     if len(subsetList) == 1:
                         break
                     try:
-                        subsetList.remove(accessID)
+                        subsetList.remove(pageNum)
                     except:
                         pass
                 
