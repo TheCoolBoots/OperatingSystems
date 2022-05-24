@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys 
 
-from math import log2
 from memClasses import *
 
 
@@ -68,13 +67,14 @@ class MemSimulator():
         #The content of the entire frame (256 bytes in hex ASCII characters, no spaces in between)
         #new line character
 
+        output = []    
         while len(self.memoryAccesses) != 0:
             currentVA = self.memoryAccesses.pop(0)
             frameContent, accessedByte, physicalMem = self.memoryLookup(currentVA)
             if not debugMode:
-                print( str(currentVA) + ", " + str(accessedByte) + ", " + str(physicalMem) + ", " + str(frameContent) + '\n') 
+                output.append(str(currentVA) + ", " + str(self.twos_comp(accessedByte, 8)) + ", " + str(physicalMem) + ", " + frameContent.hex() + '\n')
 
-        output = [f'Number of Translated Addresses = {self.numMemAccesses}']
+        output.append(f'Number of Translated Addresses = {self.numMemAccesses}')
         output.append(f'Page Faults = {self.pageMisses}')
         output.append(f'Page Fault Rate = {format(self.pageMisses/self.numMemAccesses, ".3f")}')
         output.append(f'TLB Hits = {self.tlbHits}')
@@ -100,8 +100,8 @@ class MemSimulator():
         if frameNum != None: 
             # TLB Hit
             self.tlbHits += 1
-            physAddr = int(format(frameNum, 'b') + format(self.getOffsetBits(virtualAddress), 'b'))
-            return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)], physAddr
+            # physAddr = int(format(frameNum, 'b') + format(self.getOffsetBits(virtualAddress), 'b'), 2)
+            return self.ram.frames[frameNum], self.ram.frames[frameNum][self.getOffsetBits(virtualAddress)], frameNum
         else:  
             # TLB Miss
             self.tlbMisses += 1
@@ -132,9 +132,9 @@ class MemSimulator():
 
                     # build physical address
                     offsetBits = self.getOffsetBits(virtualAddress)
-                    physAddr = int(format(frameNum, 'b') + format(offsetBits, 'b'))
+                    # physAddr = int(format(frameNum, 'b') + format(offsetBits, 'b'), 2)
 
-                    return self.ram.frames[frameNum], self.ram.frames[frameNum][offsetBits], physAddr
+                    return self.ram.frames[frameNum], self.ram.frames[frameNum][offsetBits], frameNum
             else: # page has been accessed previously
                 pageTableEntry = self.pageTable.getPageEntry(pageTableNum)
                 if pageTableEntry.valid:    
@@ -142,7 +142,7 @@ class MemSimulator():
                     self.pageHits += 1
                     self.tlb.updateTLB(TLBEntry(pageTableNum, pageTableEntry.frameNum))
                     offsetBits = self.getOffsetBits(virtualAddress)
-                    physAddr = int(format(pageTableEntry.frameNum, 'b') + format(offsetBits, 'b'))
+                    physAddr = int(format(pageTableEntry.frameNum, 'b') + format(offsetBits, 'b'), 2)
                     return self.ram.frames[pageTableEntry.frameNum], self.ram.frames[pageTableEntry.frameNum][offsetBits], physAddr
                 else:   
                     # soft page miss
@@ -182,9 +182,9 @@ class MemSimulator():
         # update the TLB
         self.tlb.updateTLB(TLBEntry(pageIndex, relevantFrame))
         
-        physAddr = int(format(relevantFrame, 'b') + format(offsetBits, 'b'))
+        # physAddr = int(format(relevantFrame, 'b') + format(offsetBits, 'b'), 2)
 
-        return self.ram.frames[relevantFrame], self.ram.frames[relevantFrame][offsetBits], physAddr
+        return self.ram.frames[relevantFrame], self.ram.frames[relevantFrame][offsetBits], relevantFrame
 
 
 
@@ -240,6 +240,16 @@ class MemSimulator():
 
     def getOffsetBits(self, virtualAddress):
         return int(255) & virtualAddress
+
+    
+    def twos_comp(self, val, bits = 8):
+        """compute the 2's complement of int value val"""
+        print(bits)
+        if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
+            val = val - (1 << bits)        # compute negative value
+        return val                         # return positive value as is
+
+
 
 
 #memSim = MemSimulator("hello", 2048, "BACKING_STORE.bin", "tst")
