@@ -613,3 +613,59 @@ File systems
                     can use allocation strategies that keep data close together
                 disadvantages: size of the inode can get pretty big and are limited in size
                     fix with multi-level indexing
+
+Other file system features
+    1. Continuous versioning (LFS)
+    2. Snapshots
+    3. content-based addressing
+        hash contents to get an address into block space
+        if multiple files have same contents, can share a block space
+        dropbox did this for a time but then had security issues
+    4. read-ahead
+        read multiple blocks at once
+        block level OR file level
+        predictive pre-fetching of files that are often open together
+
+Hard Disk Drives (HDD's)
+    Disk Scheduling Algorithms
+        fcfs
+            simple, low-overhead
+            fair
+            sub-optimal with seeks
+    Left-to-right Algorithms
+        Scan
+            goes from left of disk to right of disk back to left of disk
+            can read/write both directions
+        C-Scan
+            only reads in 1 direction
+            tries to even out wait times by giving edges the same priority
+        Look (elevator algorithm)
+            elevator doesn't travel the whole building
+            only needs to travel as far as needed to service a request, then goes back
+        C-look
+    shortest seek time first
+        need to know seek times though
+        optimal in terms of response time
+        may reach starvation
+
+    all of the above are too elementary to implement in practice
+
+    2D-Aware scheduling
+    Shortest Access Time First
+        more complicated seek curves
+        cache-sensitive scheduling
+    Age-Sensitive Scheduling
+    Priority-based scheduling
+
+
+Storage System Organizations
+    Logical Volume Manager
+        sits between Block Device Driver and Physical Storage Devices
+        software translation layer that abstracts multiple physical disks into multiple logical disks
+        allows for virtual volumes to be spread across multiple physical volumes
+        allows for software layer between logical and physical blocks
+            encryption
+            Snapshots
+            redundancy
+            hot-swapping (if a drive fails, use a different drive)
+            resizing
