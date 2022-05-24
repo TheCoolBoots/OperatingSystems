@@ -92,6 +92,10 @@ class MemSimulator():
     #(memory content, accessed value)
     def memoryLookup(self, virtualAddress:int):
         pageTableNum = self.getPageTableNum(virtualAddress)
+
+        if self.pageRepAlg == 'LRU':
+            self.updatePageReplQueue(pageTableNum)
+
         frameNum = self.tlb.lookupPage(pageTableNum)
         if frameNum != None: 
             # TLB Hit
@@ -109,7 +113,7 @@ class MemSimulator():
 
                     self.pageMisses += 1
 
-                    if self.pageRepAlg == 'FIFO' or 'LRU' :
+                    if self.pageRepAlg == 'FIFO':
                         self.pageReplaceQueue.append(pageTableNum)
                     
 
@@ -191,16 +195,13 @@ class MemSimulator():
                 return evictPage
             case 'LRU':
                 evictPage = pageReplaceQueue.pop(0) 
-                for i, element in enumerate(pageReplaceQueue):
-                    if element == evictPage:
-                        pageReplaceQueue.pop(i)
                 return evictPage
             case 'OPT':
                 # make a subset of the elements that have valid bit = 0
                 subsetList = []
-                for element in self.pageTable:
-                    if element.valid:
-                        subsetList.append(element)
+                for i, element in enumerate(self.pageTable.entries):
+                    if element != None and element.valid:
+                        subsetList.append(i)
                 
                 # make a copy of the memory accesses
                 accesses = self.memoryAccesses.copy()
@@ -216,6 +217,14 @@ class MemSimulator():
                 # remove the last used mem (the only element in QCopy)
                 evictPage = subsetList[0]
                 return evictPage
+
+
+    def updatePageReplQueue(self, pageNum):
+        try:
+            queueIndex = self.pageReplaceQueue.index(pageNum)
+            self.pageReplaceQueue.append(self.pageReplaceQueue.pop(queueIndex))
+        except ValueError:
+            self.pageReplaceQueue.append(pageNum)
 
 
 
