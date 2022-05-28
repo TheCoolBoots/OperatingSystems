@@ -2,21 +2,36 @@ from headers import *
 import libDisk as dsk
 
 fileDescriptor = int
-currentMountedDisk:disk = None
+currentMountedDisk:superblock = None
+currentMountedDiskID:int = None
 
 def tfs_mkfs(diskName:str, diskSizeBytes:int) -> int:
     newDisk = disk(diskSizeBytes)
     serialized = newDisk.serialize()
     with open(diskName, 'wb+') as diskFile:
         diskFile.write(serialized)
+        return SuccessCodes.SUCCESS
+
 
 def tfs_mount(diskName:str) -> int:
-    tmpDisk = disk()
-    with open(diskName, 'rb') as diskFile:
-        serialized = diskFile.read()
+    currentMountedDiskID = dsk.nextDiskID
+    returnCode = dsk.openDisk(diskName)
+    if returnCode == SuccessCodes.SUCCESS:
+        if currentMountedDisk != None:
+            superblkBuffer = buffer(256)
+            dsk.readBlock(currentMountedDiskID, 0, superblkBuffer)
+            currentMountedDisk = bytesToSuperblock(superblkBuffer.contents)
+            return SuccessCodes.SUCCESS
+        else:
+            return ErrorCodes.DISKMOUNT
+    return returnCode
+
 
 def tfs_unmount() -> int:
-    pass
+    if currentMountedDisk == None:
+        return ErrorCodes.DISKMOUNT
+    currentMountedDisk = None
+    return dsk.closeDisk(currentMountedDisk) 
 
 def tfs_open(filename:str) -> fileDescriptor:
     pass

@@ -12,6 +12,8 @@ class ErrorCodes(Enum):
     BLOCKSIZE = -2
     DISKID = -3
     INVALIDBLOCKNUM = -4
+    DISKMOUNT = -5
+    IOERROR = -6
 
 BLOCKSIZE = 256
 
@@ -23,6 +25,15 @@ def bytesToINode(block:bytes):
         owner = block[8:16].decode('utf-8')
         filePointer = int.from_bytes(block[16:20], 'little')
         return inode(filesize, filetype, permissions, owner, filePointer)
+
+
+def bytesToSuperblock(block:bytes):
+        superblk = superblock(0)
+        superblk.magicNumber = int.from_bytes(block[0:2], 'little')
+        superblk.nextFreeBlockIndex = int.from_bytes(block[2:6], 'little')
+        superblk.rootDirINode = int.from_bytes(block[6:10], 'little')
+        superblk.diskSize = int.from_bytes(block[10:14], 'little')
+        return superblk
 
 
 class disk():   # using the log file system
@@ -41,20 +52,6 @@ class disk():   # using the log file system
         output = bytes()
         for block in self.blocks:
             output += block.toBytes()
-    
-    def openDisk(self, serialized:bytes):
-        superblk = superblock(0)
-        superblk.magicNumber = int.from_bytes(serialized[0:2], 'little')
-        superblk.nextFreeBlockIndex = int.from_bytes(serialized[2:6], 'little')
-        superblk.rootDirINode = int.from_bytes(serialized[6:10], 'little')
-        superblk.diskSize = int.from_bytes(serialized[10:14], 'little')
-        dsk = disk(superblk.diskSize)
-        dsk.blocks[0] = superblk
-
-        # we know serialized[1*BLOCKSIZE:2*BLOCKSIZE] is the root directory's inode
-        dsk.blocks[1] = bytesToINode(serialized[BLOCKSIZE:2*BLOCKSIZE])
-        # traverse the linked structure of the inodes and load each block onto the disk
-        # PICK UP HERE
 
 
 class block():
