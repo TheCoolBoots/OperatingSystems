@@ -1,13 +1,19 @@
 from headers import *
-import libDisk as disk
+import libDisk as dsk
 
 fileDescriptor = int
+currentMountedDisk:disk = None
 
 def tfs_mkfs(diskName:str, diskSizeBytes:int) -> int:
-    pass
+    newDisk = disk(diskSizeBytes)
+    serialized = newDisk.serialize()
+    with open(diskName, 'wb+') as diskFile:
+        diskFile.write(serialized)
 
 def tfs_mount(diskName:str) -> int:
-    pass
+    tmpDisk = disk()
+    with open(diskName, 'rb') as diskFile:
+        serialized = diskFile.read()
 
 def tfs_unmount() -> int:
     pass

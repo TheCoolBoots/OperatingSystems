@@ -10,9 +10,9 @@ def openDisk(diskFile:str, nBytes:int) -> int:
 
     try:
         if nBytes > 0:
-            openFile = open(diskFile, 'rwb')
+            openFile = open(diskFile, 'rwb+')
         elif nBytes == 0:
-            openFile = open(diskFile, 'rb')
+            openFile = open(diskFile, 'rb+')
         openFiles[nextDiskID] = openFile
         nextDiskID = nextDiskID + 1
         return SuccessCodes.SUCCESS
