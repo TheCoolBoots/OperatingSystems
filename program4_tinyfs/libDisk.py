@@ -1,21 +1,5 @@
-from enum import Enum
-from msilib.schema import Error
+from headers import *
 
-class SuccessCodes(Enum):
-    SUCCESS = 0
-
-class ErrorCodes(Enum):
-    DISKNOTFOUND = -1
-    BLOCKSIZE = -2
-    DISKID = -3
-    INVALIDBLOCKNUM = -4
-
-
-BLOCKSIZE = 256
-
-class buffer():
-    def __init__(self):
-        self.contents = bytes(BLOCKSIZE)
 
 openFiles = {}
 nextDiskID = 0
