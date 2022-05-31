@@ -54,3 +54,4 @@ class dataNode():
     4 bytes for last 4 characters of name
     inode # for given name  
     """
+
