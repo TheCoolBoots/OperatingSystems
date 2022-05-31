@@ -42,8 +42,9 @@ def tfs_unmount() -> int:
 
 def tfs_open(filename:str) -> fileDescriptor:
     pass
-    #search through currentMountedDisk for inode
-    for i, curInode in enumerate(currentMountedDisk.blocks):
+    #search through datablocks in root directory inode
+    
+    for i,  in enumerate(currentMountedDisk.rootDirINode):
         if curInode == filename: #there isnt a filename attribute in the super block
             #create a dynamic resource table entry
             dynanmicResourceTable.append(dynamicResourceTableEntry(filename, 0)) #filename,internal file pointer 
