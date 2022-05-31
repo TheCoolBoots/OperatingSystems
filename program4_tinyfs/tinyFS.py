@@ -1,5 +1,5 @@
 from headers import *
-import libDisk as disk
+import libDisk as dsk
 
 fileDescriptor = int
 dynanmicResourceTable = []
@@ -9,15 +9,36 @@ class dynamicResourceTableEntry:
         self.filename = filename
         self.filepointer = filepointer
 
+currentMountedDisk:superblock = None
+currentMountedDiskID:int = None
 
 def tfs_mkfs(diskName:str, diskSizeBytes:int) -> int:
-    pass
+    newDisk = disk(diskSizeBytes)
+    serialized = newDisk.serialize()
+    with open(diskName, 'wb+') as diskFile:
+        diskFile.write(serialized)
+        return SuccessCodes.SUCCESS
+
 
 def tfs_mount(diskName:str) -> int:
-    pass
+    currentMountedDiskID = dsk.nextDiskID
+    returnCode = dsk.openDisk(diskName)
+    if returnCode == SuccessCodes.SUCCESS:
+        if currentMountedDisk != None:
+            superblkBuffer = buffer(256)
+            dsk.readBlock(currentMountedDiskID, 0, superblkBuffer)
+            currentMountedDisk = bytesToSuperblock(superblkBuffer.contents)
+            return SuccessCodes.SUCCESS
+        else:
+            return ErrorCodes.DISKMOUNT
+    return returnCode
+
 
 def tfs_unmount() -> int:
-    pass
+    if currentMountedDisk == None:
+        return ErrorCodes.DISKMOUNT
+    currentMountedDisk = None
+    return dsk.closeDisk(currentMountedDisk) 
 
 def tfs_open(filename:str) -> fileDescriptor:
     pass

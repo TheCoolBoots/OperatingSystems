@@ -1,7 +1,9 @@
+from io import FileIO
 from headers import *
+from typing import Dict
 
 
-openFiles = {}
+openFiles:Dict[int, FileIO] = {}
 nextDiskID = 0
 
 def openDisk(diskFile:str, nBytes:int) -> int:
@@ -9,10 +11,8 @@ def openDisk(diskFile:str, nBytes:int) -> int:
         return ErrorCodes.BLOCKSIZE
 
     try:
-        if nBytes > 0:
-            openFile = open(diskFile, 'rwb')
-        elif nBytes == 0:
-            openFile = open(diskFile, 'rb')
+        openFile = open(diskFile, 'rwb+')
+        openFile = open(diskFile, 'rb+')
         openFiles[nextDiskID] = openFile
         nextDiskID = nextDiskID + 1
         return SuccessCodes.SUCCESS
@@ -21,22 +21,32 @@ def openDisk(diskFile:str, nBytes:int) -> int:
 
 def readBlock(diskID:int, bNum:int, blockBuffer:buffer):
     if diskID in openFiles:
-        fileContents = openFiles[diskID].read()
         try:
-            blockBuffer.contents = fileContents[BLOCKSIZE * bNum:BLOCKSIZE * (bNum + 1)]
+            # this might allow us to not require to read the whole 
+            # file every time we want to read/write
+            openFiles[diskID].seek(bNum * BLOCKSIZE)
+            blockBuffer.contents = openFiles[diskID].read(BLOCKSIZE)
             return SuccessCodes.SUCCESS
-        except IndexError:
+        except:
             return ErrorCodes.INVALIDBLOCKNUM
     else:
         return ErrorCodes.DISKID
 
 def writeBlock(diskID:int, bNum:int, blockBuffer:buffer):
     if diskID in openFiles:
-        fileContents = openFiles[diskID].read()
+        # fileContents = openFiles[diskID].read()
+        # try:
+        #     fileContents[BLOCKSIZE*bNum : BLOCKSIZE*(bNum + 1)] = blockBuffer.contents
+        #     openFiles[diskID].write(fileContents)
         try:
-            fileContents[BLOCKSIZE*bNum : BLOCKSIZE*(bNum + 1)] = blockBuffer.contents
-            openFiles[diskID].write(fileContents)
-            return SuccessCodes.SUCCESS
+            # this might allow us to not require to read the whole 
+            # file every time we want to read/write
+            openFiles[diskID].seek(bNum * BLOCKSIZE)
+            bytesWritten = openFiles[diskID].write(blockBuffer.contents)
+            if bytesWritten == BLOCKSIZE:
+                return SuccessCodes.SUCCESS
+            else:
+                return ErrorCodes.IOERROR
         except IndexError:
             return ErrorCodes.INVALIDBLOCKNUM
     else:
@@ -45,7 +55,7 @@ def writeBlock(diskID:int, bNum:int, blockBuffer:buffer):
 def closeDisk(diskID:int):
     if diskID in openFiles:
         openFiles[diskID].close()
-        openFiles.remove(diskID)
+        openFiles.pop(diskID)
         return SuccessCodes.SUCCESS
     else:
         return ErrorCodes.DISKID
