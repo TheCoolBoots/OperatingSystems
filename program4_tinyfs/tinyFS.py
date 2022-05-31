@@ -7,17 +7,10 @@ fileDescriptor = int
 dynamicResourceTable = []
 FDCounter = 0
 
-<<<<<<< Updated upstream
 class dynamicResourceTableEntry:  #file descriptor and inode indexes
     def __init__(self, fDescriptor, inodeBlockNum):
         self.fDescriptor = fDescriptor
         self.inodeBlockNum = inodeBlockNum
-=======
-class dynamicResourceTableEntry: 
-    def __init__(self, filename, filepointer):
-        self.filename = filename
-        self.filepointer = filepointer
->>>>>>> Stashed changes
 
 currentMountedDisk:superblock = None
 currentMountedDiskID:int = None
