@@ -65,6 +65,7 @@ class superblock(block):
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
+
     def toBytes(self) -> bytes:
         output = self.magicNumber.to_bytes(2, 'little', False)
         output += self.nextFreeBlockIndex.to_bytes(4, 'little', False)
@@ -103,12 +104,11 @@ class dataNode(block):
     # Directory data block structure:
     """
     4 bytes for first 4 characters of name
+    4 bytes for middle 4 characters of name
     4 bytes for last 4 characters of name
     inode # for given name  
     """
 
-<<<<<<< HEAD
-=======
     def toBytes(self) -> bytes:
         return self.content
 
@@ -118,4 +118,3 @@ class freeNode(block):
         self.content = bytes(256)
     def toBytes(self) -> bytes:
         pass
->>>>>>> a214b35655cf7fcdbbd4e59accad4429ad9a1efc

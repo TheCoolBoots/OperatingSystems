@@ -1,4 +1,4 @@
 *.out
-idea/
-vscode/
+.idea/
+.vscode/
 __pycache__/

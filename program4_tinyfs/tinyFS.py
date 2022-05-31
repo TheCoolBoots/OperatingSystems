@@ -13,21 +13,36 @@ currentMountedDisk:superblock = None
 currentMountedDiskID:int = None
 
 def tfs_mkfs(diskName:str, diskSizeBytes:int) -> int:
+    # create a brand new disk
+    # NOTE: this is the only time we should ever use the disk class
     newDisk = disk(diskSizeBytes)
+
+    # convert the disk into bytes
     serialized = newDisk.serialize()
+
+    # write the formatted disk to the given filename
     with open(diskName, 'wb+') as diskFile:
         diskFile.write(serialized)
         return SuccessCodes.SUCCESS
 
 
 def tfs_mount(diskName:str) -> int:
+
+    # save the DiskID of the disk that will be opened
     currentMountedDiskID = dsk.nextDiskID
+
+    # open the disk
     returnCode = dsk.openDisk(diskName)
     if returnCode == SuccessCodes.SUCCESS:
         if currentMountedDisk != None:
             superblkBuffer = buffer(256)
+
+            # read the superblock of the opened disk
             dsk.readBlock(currentMountedDiskID, 0, superblkBuffer)
+
+            # convert the raw bytes into a superblock class
             currentMountedDisk = bytesToSuperblock(superblkBuffer.contents)
+
             return SuccessCodes.SUCCESS
         else:
             return ErrorCodes.DISKMOUNT
@@ -37,19 +52,27 @@ def tfs_mount(diskName:str) -> int:
 def tfs_unmount() -> int:
     if currentMountedDisk == None:
         return ErrorCodes.DISKMOUNT
+
+    # close all open files, committing them to disk
+
+    # write the superblock of the current FS to disk
+    dsk.writeBlock(currentMountedDiskID, 0, buffer(currentMountedDisk.toBytes()))
+    
     currentMountedDisk = None
     return dsk.closeDisk(currentMountedDisk) 
 
 def tfs_open(filename:str) -> fileDescriptor:
-    pass
-    #search through datablocks in root directory inode
     
-    for i,  in enumerate(currentMountedDisk.rootDirINode):
-        if curInode == filename: #there isnt a filename attribute in the super block
-            #create a dynamic resource table entry
-            dynanmicResourceTable.append(dynamicResourceTableEntry(filename, 0)) #filename,internal file pointer 
-            #successful = disk.openDisk(filename, curInode.filesize) #open file?
-            # return file descriptor , the index in the dynamic Resoruce table?
+    b = buffer(BLOCKSIZE)
+    dsk.readBlock(currentMountedDiskID, currentMountedDisk.rootDirINode, b)
+    rootDirINode = bytesToINode(b.contents)
+
+    for dataBlockID in rootDirINode.dataBlockPtrs:
+        dsk.readBlock(currentMountedDiskID, dataBlockID, b)
+        for i in range(0, 256, 16):
+            fName = b.contents[i:i+12]
+            fileINode = b.contents[i+12:i+16]
+    pass
 
 
 
