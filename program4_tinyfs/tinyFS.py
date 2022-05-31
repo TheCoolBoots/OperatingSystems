@@ -1,13 +1,15 @@
+from encodings import utf_8
 from headers import *
 import libDisk as dsk
 
 fileDescriptor = int
 dynanmicResourceTable = []
+FDCounter = 0
 
-class dynamicResourceTableEntry: 
-    def __init__(self, filename, filepointer  ):
-        self.filename = filename
-        self.filepointer = filepointer
+class dynamicResourceTableEntry:  #file descriptor and inode indexes
+    def __init__(self, fDescriptor, inodeBlockNum):
+        self.fDescriptor = fDescriptor
+        self.inodeBlockNum = inodeBlockNum
 
 currentMountedDisk:superblock = None
 currentMountedDiskID:int = None
@@ -70,15 +72,30 @@ def tfs_open(filename:str) -> fileDescriptor:
     for dataBlockID in rootDirINode.dataBlockPtrs:
         dsk.readBlock(currentMountedDiskID, dataBlockID, b)
         for i in range(0, 256, 16):
-            fName = b.contents[i:i+12]
-            fileINode = b.contents[i+12:i+16]
-    pass
+            fName = b.contents[i:i+12].decode("utf-8")
+            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
+            if(fName == filename):
+                #make dynamicResourceTableEntry, add it to the table 
+
+                dynanmicResourceTable.append(dynamicResourceTableEntry(FDCounter, fileINode))
+            
+                #increment FD Counter
+                returnFD = FDCounter
+                FDCounter = FDCounter + 1
+
+                #return the file descriptor
+                return returnFD
+
 
 
 
 def tfs_close(FD:fileDescriptor) -> int:
     dynanmicResourceTable.remove(fileDescriptor)
-    #closeDisk?
+    FDCounter = FDCounter - 1
+
+    return 0
+
+    
 
 
 def tfs_write(FD:fileDescriptor, values:buffer, size:int):
