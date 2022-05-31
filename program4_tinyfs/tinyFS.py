@@ -1,9 +1,10 @@
+from asyncio.windows_events import NULL
 from encodings import utf_8
 from headers import *
 import libDisk as dsk
 
 fileDescriptor = int
-dynanmicResourceTable = []
+dynamicResourceTable = []
 FDCounter = 0
 
 class dynamicResourceTableEntry:  #file descriptor and inode indexes
@@ -76,8 +77,7 @@ def tfs_open(filename:str) -> fileDescriptor:
             fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
             if(fName == filename):
                 #make dynamicResourceTableEntry, add it to the table 
-
-                dynanmicResourceTable.append(dynamicResourceTableEntry(FDCounter, fileINode))
+                dynamicResourceTable.append(dynamicResourceTableEntry(FDCounter, fileINode))
             
                 #increment FD Counter
                 returnFD = FDCounter
@@ -87,21 +87,48 @@ def tfs_open(filename:str) -> fileDescriptor:
                 return returnFD
 
 
-
-
 def tfs_close(FD:fileDescriptor) -> int:
-    dynanmicResourceTable.remove(fileDescriptor)
-    FDCounter = FDCounter - 1
+    dynamicResourceTable.remove(fileDescriptor)
 
-    return 0
+    # i think we need this
+    # indexToDelete = 0
+    # for index, entry in enumerate(dynamicResourceTable):
+    #     if entry.fDescriptor == fileDescriptor:
+    #         indexToDelete = index
+    #         break
+    #     else:
+    #         indexToDelete = -1 # or return error code that the file was not opened to begin with 
 
-    
-
+    # if indexToDelete >= 0:
+    #     dynamicResourceTable.pop(indexToDelete)
 
 def tfs_write(FD:fileDescriptor, values:buffer, size:int):
     pass
 
+# deletes a file and marks its blocks as free on disk. 
 def tfs_delete(FD:fileDescriptor) -> int:
+    fileDescriptorToDelete = None
+    inodeBlockNumToDelete = None
+
+    #find it in dynamicResourceTable
+    for entry in dynamicResourceTable:
+        if entry.fileDescriptor == FD:
+            fileDescriptorToDelete = entry.fileDescriptor
+            inodeBlockNumToDelete = entry.inodeBlockNum
+            break
+    
+    #remove it from table 
+    tfs_close(FD)
+            
+
+    #find where the file is on the disk
+
+    #remove it 
+
+    #reset the nextFreeBlockIndex in super block
+
+    #decrement counter
+    FDCounter = FDCounter - 1
     pass
 
 def tfs_readByte(FD:fileDescriptor, buff:buffer) -> int:
