@@ -669,3 +669,30 @@ Storage System Organizations
             redundancy
             hot-swapping (if a drive fails, use a different drive)
             resizing
+Redundant Array of Inexpensive Disks
+    needs to solve:
+        capacity
+        performance
+        redundancy
+
+    failure rate:
+        75000 hours per 1 failure
+        if 1 million hard drives, 1 failure every .75 hours
+
+    striping
+        spreading data across multiple devices
+    stripe
+        size of allocation across all disks
+    strip
+        allocation on a single disk
+
+    can only write whole stripes at a time
+        stripe = multiple strips in a RAID
+        can read/write to n disk strips at a time 
+            where n is the number of disks in the RAID system
+    
+        increases capacity/throughput
+
+
+    RAID 1: mirroring
+        
