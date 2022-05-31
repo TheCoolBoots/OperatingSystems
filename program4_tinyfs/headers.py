@@ -1,7 +1,7 @@
 from enum import Enum
 
 class buffer():
-    def __init__(self, contents:bytes):
+    def __init__(self, contents:bytes = bytes(256)):
         self.contents = contents
 
 class SuccessCodes(Enum):

@@ -1,16 +1,16 @@
 from asyncio.windows_events import NULL
-from encodings import utf_8
 from headers import *
 import libDisk as dsk
+from typing import Dict
 
 fileDescriptor = int
-dynamicResourceTable = []
+dynamicResourceTable = {}
 FDCounter = 0
 
 class dynamicResourceTableEntry:  #file descriptor and inode indexes
-    def __init__(self, fDescriptor, inodeBlockNum):
-        self.fDescriptor = fDescriptor
+    def __init__(self, inodeBlockNum:int, memINode:inode):
         self.inodeBlockNum = inodeBlockNum
+        self.memINode = memINode
 
 currentMountedDisk:superblock = None
 currentMountedDiskID:int = None
@@ -77,7 +77,9 @@ def tfs_open(filename:str) -> fileDescriptor:
             fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
             if(fName == filename):
                 #make dynamicResourceTableEntry, add it to the table 
-                dynamicResourceTable.append(dynamicResourceTableEntry(FDCounter, fileINode))
+                b = buffer()
+                dsk.readBlock(currentMountedDiskID, fileINode, b)
+                dynamicResourceTable[FDCounter] = dynamicResourceTableEntry(fileINode, bytesToINode(b.contents))
             
                 #increment FD Counter
                 returnFD = FDCounter
@@ -88,21 +90,14 @@ def tfs_open(filename:str) -> fileDescriptor:
 
 
 def tfs_close(FD:fileDescriptor) -> int:
-    dynamicResourceTable.remove(fileDescriptor)
+    try:
+        entry = dynamicResourceTable.pop(FD)
+        b = buffer(entry.memINode.toBytes())
+        dsk.writeBlock(currentMountedDiskID, entry.inodeBlockNum, b)
 
-    # i think we need this
-    # indexToDelete = 0
-    # for index, entry in enumerate(dynamicResourceTable):
-    #     if entry.fDescriptor == fileDescriptor:
-    #         indexToDelete = index
-    #         break
-    #     else:
-    #         indexToDelete = -1 # or return error code that the file was not opened to begin with 
-    dynamicResourceTable.remove(fileDescriptor)
-    return SuccessCodes.SUCCESS
-
-    # if indexToDelete >= 0:
-    #     dynamicResourceTable.pop(indexToDelete)
+        return SuccessCodes.SUCCESS
+    except KeyError:
+        return -1
 
 def tfs_write(FD:fileDescriptor, values:buffer, size:int):
     pass
