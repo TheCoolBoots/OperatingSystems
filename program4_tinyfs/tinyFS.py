@@ -6,10 +6,17 @@ fileDescriptor = int
 dynanmicResourceTable = []
 FDCounter = 0
 
+<<<<<<< Updated upstream
 class dynamicResourceTableEntry:  #file descriptor and inode indexes
     def __init__(self, fDescriptor, inodeBlockNum):
         self.fDescriptor = fDescriptor
         self.inodeBlockNum = inodeBlockNum
+=======
+class dynamicResourceTableEntry: 
+    def __init__(self, filename, filepointer):
+        self.filename = filename
+        self.filepointer = filepointer
+>>>>>>> Stashed changes
 
 currentMountedDisk:superblock = None
 currentMountedDiskID:int = None
@@ -87,15 +94,9 @@ def tfs_open(filename:str) -> fileDescriptor:
                 return returnFD
 
 
-
-
 def tfs_close(FD:fileDescriptor) -> int:
     dynanmicResourceTable.remove(fileDescriptor)
-    FDCounter = FDCounter - 1
-
-    return 0
-
-    
+    return SuccessCodes.SUCCESS
 
 
 def tfs_write(FD:fileDescriptor, values:buffer, size:int):
