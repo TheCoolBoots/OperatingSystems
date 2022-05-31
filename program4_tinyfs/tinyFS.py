@@ -7,10 +7,17 @@ fileDescriptor = int
 dynamicResourceTable = []
 FDCounter = 0
 
+<<<<<<< Updated upstream
 class dynamicResourceTableEntry:  #file descriptor and inode indexes
     def __init__(self, fDescriptor, inodeBlockNum):
         self.fDescriptor = fDescriptor
         self.inodeBlockNum = inodeBlockNum
+=======
+class dynamicResourceTableEntry: 
+    def __init__(self, filename, filepointer):
+        self.filename = filename
+        self.filepointer = filepointer
+>>>>>>> Stashed changes
 
 currentMountedDisk:superblock = None
 currentMountedDiskID:int = None
@@ -98,6 +105,8 @@ def tfs_close(FD:fileDescriptor) -> int:
     #         break
     #     else:
     #         indexToDelete = -1 # or return error code that the file was not opened to begin with 
+    dynamicResourceTable.remove(fileDescriptor)
+    return SuccessCodes.SUCCESS
 
     # if indexToDelete >= 0:
     #     dynamicResourceTable.pop(indexToDelete)

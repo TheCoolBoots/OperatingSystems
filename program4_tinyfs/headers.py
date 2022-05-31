@@ -19,12 +19,17 @@ BLOCKSIZE = 256
 
 
 def bytesToINode(block:bytes):
+        # print(block[0:4])
         filesize = int.from_bytes(block[0:4], 'little')
         filetype = int.from_bytes(block[4:6], 'little')
         permissions = int.from_bytes(block[6:8], 'little')
         owner = block[8:16].decode('utf-8')
+        # print(owner)
         filePointer = int.from_bytes(block[16:20], 'little')
-        return inode(filesize, filetype, permissions, owner, filePointer)
+        node = inode(filesize, filetype, filePointer, permissions, owner)
+        for i in range(20, 256, 4):
+            node.dataBlockPtrs[(i-20)//4] = int.from_bytes(block[i:i+4], 'little')
+        return node
 
 
 def bytesToSuperblock(block:bytes):
@@ -61,40 +66,45 @@ class block():
 
 class superblock(block):
     def __init__(self, diskSize:int):
-        self.magicNumber = 0x5A         # 2 bytes
+        self.magicNumber = 0x5A         # 2 bytes; 16 bits
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
 
     def toBytes(self) -> bytes:
-        output = self.magicNumber.to_bytes(2, 'little', False)
-        output += self.nextFreeBlockIndex.to_bytes(4, 'little', False)
-        output += self.rootDirINode.to_bytes(4, 'little', False)
-        output += self.diskSize.to_bytes(4, 'little', False)
+        output = self.magicNumber.to_bytes(2, 'little')
+        output += self.nextFreeBlockIndex.to_bytes(4, 'little')
+        output += self.rootDirINode.to_bytes(4, 'little')
+        output += self.diskSize.to_bytes(4, 'little')
         output += bytes(256-14)
+        return output
 
 
 class inode(block):
-    def __init__(self, filesize:int, filetype:int, permissions:int = 0xffff, owner:str = 'root', filePointer = 0):
+    def __init__(self, filesize:int, filetype:int, filePointer = 0, permissions:int = 0xffff, owner:str = 'root'):
         self.filesize = filesize        # 4 byte integer
         self.filetype = filetype        # 2 byte int; 0 = regular, 1 = directory
         self.permissions = permissions  # 2 byte integer
         self.owner = owner              # 8 byte string
+        self.owner = '_'*(8-len(owner)) + owner
         self.filePointer = filePointer  # 4 byte integer
         
         # 256 - 20 = 236 bytes left for data block pointers
+        # 236/4 = 59 ; 59 4 byte integer pointers
         # max file size = 59 * 256 bytes = 15104 bytes or 15KB
         self.dataBlockPtrs = [0] * 59
 
     def toBytes(self) -> bytes:
-        output = self.filesize.to_bytes(4, 'little', False)
-        output += self.filetype.to_bytes(2, 'little', False)
-        output += self.permissions.to_bytes(2, 'little', False)
+        output = self.filesize.to_bytes(4, 'little')
+        output += self.filetype.to_bytes(2, 'little')
+        output += self.permissions.to_bytes(2, 'little')
         output += bytes(self.owner, 'utf-8')
-        output += self.filePointer.to_bytes(4, 'little', False)
+        output += self.filePointer.to_bytes(4, 'little')
 
         for ptr in self.dataBlockPtrs:
-            output += ptr.to_bytes(4, 'little', False)
+            output += ptr.to_bytes(4, 'little')
+        
+        return output
 
 
 class dataNode(block):
