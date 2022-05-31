@@ -30,6 +30,8 @@ class test_scheduler(unittest.TestCase):
         self.assertEqual(nodeActual.nextFreeBlockIndex, 3)
         self.assertEqual(nodeActual.rootDirINode, 1)
         self.assertEqual(nodeActual.diskSize, 1991)
+        self.assertEqual(len(nodeActual.freeBlocks), 1936)
+        self.assertEqual(int(nodeActual.freeBlocks, 2), int('00' + ('1' * 1934), 2))
         
 
 

@@ -1,7 +1,7 @@
 from enum import Enum
 
 class buffer():
-    def __init__(self, contents:bytes):
+    def __init__(self, contents:bytes = bytes(256)):
         self.contents = contents
 
 class SuccessCodes(Enum):
@@ -16,29 +16,6 @@ class ErrorCodes(Enum):
     IOERROR = -6
 
 BLOCKSIZE = 256
-
-
-def bytesToINode(block:bytes):
-        # print(block[0:4])
-        filesize = int.from_bytes(block[0:4], 'little')
-        filetype = int.from_bytes(block[4:6], 'little')
-        permissions = int.from_bytes(block[6:8], 'little')
-        owner = block[8:16].decode('utf-8')
-        # print(owner)
-        filePointer = int.from_bytes(block[16:20], 'little')
-        node = inode(filesize, filetype, filePointer, permissions, owner)
-        for i in range(20, 256, 4):
-            node.dataBlockPtrs[(i-20)//4] = int.from_bytes(block[i:i+4], 'little')
-        return node
-
-
-def bytesToSuperblock(block:bytes):
-        superblk = superblock(0)
-        superblk.magicNumber = int.from_bytes(block[0:2], 'little')
-        superblk.nextFreeBlockIndex = int.from_bytes(block[2:6], 'little')
-        superblk.rootDirINode = int.from_bytes(block[6:10], 'little')
-        superblk.diskSize = int.from_bytes(block[10:14], 'little')
-        return superblk
 
 
 class disk():   # using the log file system
@@ -70,14 +47,28 @@ class superblock(block):
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
+        self.freeBlocks = '00'+('1'*1934)
+
+        # 256 - 12 - 2 bytes free for free block tracking
+        # = 242 bytes = 1936 bits
 
     def toBytes(self) -> bytes:
         output = self.magicNumber.to_bytes(2, 'little')
         output += self.nextFreeBlockIndex.to_bytes(4, 'little')
         output += self.rootDirINode.to_bytes(4, 'little')
         output += self.diskSize.to_bytes(4, 'little')
-        output += bytes(256-14)
+        output += int(self.freeBlocks, 2).to_bytes(len(self.freeBlocks)//8,'big')
         return output
+
+def bytesToSuperblock(block:bytes):
+        superblk = superblock(0)
+        superblk.magicNumber = int.from_bytes(block[0:2], 'little')
+        superblk.nextFreeBlockIndex = int.from_bytes(block[2:6], 'little')
+        superblk.rootDirINode = int.from_bytes(block[6:10], 'little')
+        superblk.diskSize = int.from_bytes(block[10:14], 'little')
+        superblk.freeBlocks = format(int.from_bytes(block[14:], 'big'), 'b')
+        superblk.freeBlocks = '0'*(1936 - len(superblk.freeBlocks)) + superblk.freeBlocks
+        return superblk
 
 
 class inode(block):
@@ -106,6 +97,19 @@ class inode(block):
         
         return output
 
+def bytesToINode(block:bytes):
+        # print(block[0:4])
+        filesize = int.from_bytes(block[0:4], 'little')
+        filetype = int.from_bytes(block[4:6], 'little')
+        permissions = int.from_bytes(block[6:8], 'little')
+        owner = block[8:16].decode('utf-8')
+        # print(owner)
+        filePointer = int.from_bytes(block[16:20], 'little')
+        node = inode(filesize, filetype, filePointer, permissions, owner)
+        for i in range(20, 256, 4):
+            node.dataBlockPtrs[(i-20)//4] = int.from_bytes(block[i:i+4], 'little')
+        return node
+
 
 class dataNode(block):
     def __init__(self, content:bytes):
@@ -123,8 +127,7 @@ class dataNode(block):
         return self.content
 
 
-class freeNode(block):
-    def __init__(self):
-        self.content = bytes(256)
-    def toBytes(self) -> bytes:
-        pass
+class dynamicResourceTableEntry:  #file descriptor and inode indexes
+    def __init__(self, inodeBlockNum:int, memINode:inode):
+        self.inodeBlockNum = inodeBlockNum
+        self.memINode = memINode
