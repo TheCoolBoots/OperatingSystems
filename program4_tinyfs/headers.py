@@ -47,7 +47,7 @@ class superblock(block):
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
-        self.freeBlocks = '00'+('1'*1934)
+        self.freeBlocks = '00'+('1'*1934) # 0 is not free, 1 is free 
 
         # 256 - 12 - 2 bytes free for free block tracking
         # = 242 bytes = 1936 bits
@@ -131,3 +131,4 @@ class dynamicResourceTableEntry:  #file descriptor and inode indexes
     def __init__(self, inodeBlockNum:int, memINode:inode):
         self.inodeBlockNum = inodeBlockNum
         self.memINode = memINode
+        
