@@ -83,7 +83,7 @@ class inode(block):
         # 256 - 20 = 236 bytes left for data block pointers
         # 236/4 = 59 ; 59 4 byte integer pointers
         # max file size = 59 * 256 bytes = 15104 bytes or 15KB
-        self.dataBlockPtrs = [0] * 59
+        self.dataBlockPtrs = [0] * 59 
 
     def toBytes(self) -> bytes:
         output = self.filesize.to_bytes(4, 'little')
