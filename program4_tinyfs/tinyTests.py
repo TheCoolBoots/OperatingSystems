@@ -1,5 +1,6 @@
 import unittest
 import tinyFS as tfs
+import libDisk as dsk
 
 from headers import *
 
@@ -47,6 +48,23 @@ class test_scheduler(unittest.TestCase):
     
     def test_tfs_close_IsNotOpen(self):
         self.assertEqual(tfs.tfs_close(" "), -1)
+        self.assertEqual(int(nodeActual.freeBlocks, 2), int('000' + ('1' * 1933), 2))
+
+    def test_initTestDisk(self):
+        
+        returnCode = tinyFS.tfs_mkfs('program4_tinyfs/TestFiles/mkfsTest1.tfs', BLOCKSIZE * 5)
+        # superblock + root inode + 3 data nodes
+
+    def test_mount(self):
+        retCode = tinyFS.tfs_mount('program4_tinyfs/TestFiles/mkfsTest1.tfs')
+        self.assertEqual(retCode, SuccessCodes.SUCCESS)
+        self.assertEqual(tinyFS.cmd, superblock(BLOCKSIZE * 5))
+        self.assertEqual(tinyFS.cmdid, 0)
+        tinyFS.cmd.diskSize = BLOCKSIZE * 10
+        retCode = tinyFS.tfs_unmount()
+        retCode = tinyFS.tfs_mount('program4_tinyfs/TestFiles/mkfsTest1.tfs')
+        self.assertEqual(tinyFS.cmd, superblock(BLOCKSIZE * 10))
+        retCode = tinyFS.tfs_unmount()
 
     def test_tfs_delete_FirstEntry(self):
         returnVal = tfs.tfs_open(" ")

@@ -1,4 +1,5 @@
 from enum import Enum
+from math import ceil
 
 class buffer():
     def __init__(self, contents:bytes = bytes(256)):
@@ -25,17 +26,19 @@ class disk():   # using the log file system
         if diskSizeBytes % BLOCKSIZE != 0:
             raise ValueError(f"diskSizeBytes must be divisible by BLOCKSIZE({BLOCKSIZE})")
         self.diskSizeBytes = diskSizeBytes
-        self.maxNumBlocks = diskSizeBytes/BLOCKSIZE
+        self.maxNumBlocks = ceil(diskSizeBytes/BLOCKSIZE)
         self.blocks:list[block] = [freeNode()] * self.maxNumBlocks
 
         self.blocks[0] = superblock(diskSizeBytes)
-        self.blocks[1] = inode(0)               # inode of root directory
+        self.blocks[1] = inode(0, 1)               # inode of root directory
         self.blocks[2] = dataNode(bytes(256))   # data of root directory
 
     def serialize(self) -> bytes:
         output = bytes()
         for block in self.blocks:
             output += block.toBytes()
+
+        return output
 
 
 class block():
@@ -49,7 +52,8 @@ class superblock(block):
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
-        self.freeBlocks = '00'+('1'*1934) # 0 is not free, 1 is free 
+        # TODO change to array of 1's and 0's to be more efficient
+        self.freeBlocks = '000'+('1'*1933) # 0 is not free, 1 is free 
 
         # 256 - 12 - 2 bytes free for free block tracking
         # = 242 bytes = 1936 bits
@@ -61,6 +65,35 @@ class superblock(block):
         output += self.diskSize.to_bytes(4, 'little')
         output += int(self.freeBlocks, 2).to_bytes(len(self.freeBlocks)//8,'big')
         return output
+
+    def getNextFreeBlockIndex(self):
+        found = False
+
+        # save the next free block index because it will be modified below
+        returnIndex = self.nextFreeBlockIndex
+
+        while not found:
+            self.nextFreeBlockIndex += 1
+
+            # if we reach the end of the file system's available blocks,
+            # wrap around back to the first block
+            if self.nextFreeBlockIndex >= self.diskSize//256:
+                self.nextFreeBlockIndex = 0
+
+            # if the free block bitmap shows the block is free, break out of the loop
+            if self.freeBlocks[self.nextFreeBlockIndex] == '1':
+                found = True
+
+        # update the freeblocks bitmap
+        self.freeBlocks = self.freeBlocks[:returnIndex] + '0' + self.freeBlocks[returnIndex + 1:]
+        return returnIndex
+
+    def __eq__(self, other):
+        if type(other) != superblock:
+            return False
+        return self.magicNumber == other.magicNumber and self.nextFreeBlockIndex == other.nextFreeBlockIndex and self.diskSize == other.diskSize and self.freeBlocks == other.freeBlocks
+            
+
 
 def bytesToSuperblock(block:bytes):
         superblk = superblock(0)
@@ -99,6 +132,7 @@ class inode(block):
         
         return output
 
+
 def bytesToINode(block:bytes):
         # print(block[0:4])
         filesize = int.from_bytes(block[0:4], 'little')
@@ -125,6 +159,13 @@ class dataNode(block):
     inode # for given name  
     """
 
+    def toBytes(self) -> bytes:
+        return self.content
+
+
+class freeNode(block):
+    def __init__(self):
+        self.content = bytes(256)
     def toBytes(self) -> bytes:
         return self.content
 
