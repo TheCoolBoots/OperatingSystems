@@ -37,11 +37,31 @@ class test_scheduler(unittest.TestCase):
         self.assertEqual(int(nodeActual.freeBlocks, 2), int('000' + ('1' * 1933), 2))
     
 
-
-    def test_initTestDisk(self):
+    def test_aaa_initTestDisk(self):
         
         returnCode = tfs.tfs_mkfs('program4_tinyfs/TestFiles/mkfsTest1.tfs', BLOCKSIZE * 5)
         # superblock + root inode + 3 data nodes
+
+        superblk = superblock(1792)
+        superblk.nextFreeBlockIndex = 6
+        superblk.freeBlocks = '000000' + '1'*1930
+
+        rootDirINode = inode(0, 1, 0)   # owner = root, perms = 0xffff
+        rootDirINode.dataBlockPtrs[0] = 2
+        rootDirINode.filesize = 16
+
+        dataBlockBytes = '_______file1'.encode('utf-8') + int(3).to_bytes(4, 'little') + bytes(256-16)
+        rootDirDataBlock = dataNode(dataBlockBytes)
+
+        file0INode = inode(512, 0)
+        file0INode.dataBlockPtrs[0] = 4
+        file0INode.dataBlockPtrs[1] = 5
+
+        file0Data1 = list(range(0, 256))
+        file0Data2 = list(range(256, 0))
+
+        
+
 
     def test_mount(self):
         retCode = tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest1.tfs')
@@ -56,6 +76,7 @@ class test_scheduler(unittest.TestCase):
 
 
     def test_tfs_open(self):
+<<<<<<< HEAD
         returnVal = tfs.tfs_open("file0")
         self.assertEqual(returnVal, SuccessCodes.SUCCESS)
         self.assertEqual(tfs.dynamicResourceTable[0], dynamicResourceTableEntry(0,  ))
@@ -68,6 +89,11 @@ class test_scheduler(unittest.TestCase):
 
         self.assertEqual(tfs.tfs_open(" "), )
        
+=======
+
+        self.assertEqual(tfs.tfs_open(" "), 0)
+        self.assertEqual(tfs.tfs_open(" "), 1)
+>>>>>>> 456e5c4b975a6d0bf0530518710f825305142fa7
 
 
     # def test_tfs_close_IsOpen(self):
