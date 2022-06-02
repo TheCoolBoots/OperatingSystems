@@ -686,6 +686,8 @@ Redundant Array of Inexpensive Disks
     strip
         allocation on a single disk
 
+    all RAID system disks needed to be the same size
+
     can only write whole stripes at a time
         stripe = multiple strips in a RAID
         can read/write to n disk strips at a time 
@@ -695,4 +697,98 @@ Redundant Array of Inexpensive Disks
 
 
     RAID 1: mirroring
+        have two instances of all data; if one gets corrupted, fix the other one
+        high overhead; half the capacity, writes are slower (2 writes per data)
+
+    RAID 2/3/4: parody disk
+        majority of disks are main disks; last disk is parody disk
+        parody disk holds encoded versions of all other disks
+
+        given disk A, B, C and parody disk D
+        xor parody scheme:
+            D = A ^ B ^ C
+            A, B, and C can all be recovered if only one of the three fail
+
+        parody disk must be updated at every write
+        thus, is the bottleneck for this system
+
+    RAID 5/6: 
+        1 strip in 4 strips acts as parody
+        but round robin assignment for which disk holds the parody strip
+        best performance for large reads/writes, small reads
+        suffers from small write performance
+            need whole stripe to calculate new parody value
+            thus for a small byte write, need to read whole stripe, calculate, then rewrite whole stripe
+
+
+
+SECURITY
+    focused on correctness, performance, and reliability so far
+        deadlock
+        process starvation
+        process isolation
+        drive failure
+
+        passive/incidental failures
+
+    also have to deal with Active Adversaries
+        passive adversaries (curious) ex. eavesdropping, data gathering
+        active adversaries (malicious)
+            intentionally deadlock, destroy data, intentionally starve machine
+
+    Best case scenario for security is that nothing happens; nothing changes
+
+    lots of reasons not to do security
+        first to market
+        cheaper
+        easier
+    
+    who is liable for security failures?
+        customers often suffer the most for security failures
+
+    Guiding Principles for Security
+        confidentiality model
+            how to keep stuff secret?
+            read down, not up
+            write up, not down
+        integrity model
+            can I trust data?
+            I need to trust data above me
+            read up, not down
+            write down, not up
+
+        basically, can only work on your level; have separate systems for each security level
+
+        principles of secure software
+
+Filesystem Forensics
+    windows registry
+        holds metadata about the PC
+        holds:
+            hashed login passwords
+            time zone
+            user accounts
+            user settings
+            externally connected devices
+        organized into 7 trees (called keys)
+            ex. HKEY_LOCAL_MACHINE
+        each key has subkeys
+        key groups and values called "hives"
+        regedit.exe
+            allows you to walk through windows registry
+
+    Cool tools
+        John the Ripper
+
+    file carving
+        look for magic numbers in a file system (headers specific to a certain type of file)
+        "carves" out files from raw data
+        now uses machine learning to find patters and parse out data
+        files on hard drive might not be contiguous
         
+
+
+
+
+
+

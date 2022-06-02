@@ -1,0 +1,57 @@
+libDisk
+    __init__(BLOCKSIZE = 256 bytes)
+    openDisk(filename:str, nBytes:int) -> int   # nBytes should be divisible by BLOCKSIZE
+        if nBytes > 0 and filename in disk,
+            disk[filename] is resized to nBytes and file's contents are overwritten
+    readBlock(int disk, int bNum)
+        reads BLOCKSIZE from disk
+        bNum = logical block number
+    writeBlock(int disk, int bNum, contents)
+        writes contents to disk @ block bNum
+    closeDisk(int disk)
+        closes disk for any further IO
+        flushes any buffers
+        closes underyling file
+
+TinyFS
+    Block Types:
+        superblock, inode, data, free
+        all 256 bytes
+    
+    interface functions:
+        int tfs_mkfs(filename, nBytes)
+            creates a file, formats it to be mountable
+            returns success/error code
+        int tfs_mount(filename)
+            verifies if filename's file system is correct
+            mounts filename
+            1 FILE SYSTEM MOUNTED AT A TIME
+        int tfs_unmount()
+            unmounts currently mounted file system
+        file tfs_open(name)
+            adds entry in dynamic resource table
+            returns file descriptor
+        int tfs_close(file)
+            closes the file and removes resource table entry
+        int tfs_write(file, contents)
+            write contents to file
+            sets file pointer to 0
+        int tfs_delete(file)
+            deletes a file and marks its blocks as free on disk
+        int tfs_readByte(file, buffer)
+            reads one byte from a file
+            byte depends on file pointer location
+            if pointer is at end of file, return error
+        int tfs_seek(file, offset)
+            sets the file pointer of file to offset
+        tfs_rename()
+        tfs_readdir() lists all files and directories on disk
+
+        implement full-disk encryption
+
+    default disk size = 10240
+    default disk name = "tinyFSDisk"
+    
+    ERROR CODES:
+
+
