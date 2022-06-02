@@ -2,6 +2,7 @@ from asyncio.windows_events import NULL
 from headers import *
 import libDisk as dsk
 from typing import Dict
+from math import ceil
 
 fileDescriptor = int
 dynamicResourceTable : Dict[int, dynamicResourceTableEntry] = {}
@@ -101,14 +102,15 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
     bytesToWrite = len(writeBuffer.contents)
     valuePtr = 0
 
-    if fileINode.filesize > fileINode.filePointer + size:
-        # don't need to allocate any new datablocks
-        pass
-    else:
-        # TODO
-        # maxSize = num 0's in dataBlockPtrs * 256
-        # make maxSize > fileINode.filesize + size by allocating new blocks
-        pass
+
+    blocksAllocated = ceil(fileINode.filesize, BLOCKSIZE)
+    blocksNeeded = ceil(fileINode.filePointer + size, BLOCKSIZE)
+    if blocksNeeded > blocksAllocated:
+        i = 0
+        while fileINode.dataBlockPtrs[i] != 0:
+            i += 1
+        for j in range(0, blocksNeeded - blocksAllocated):
+            fileINode.dataBlockPtrs[i+j] = cmd.getNextFreeBlockIndex()
 
 
     # freeBytes in current block = 256 - (fileINode.filePointer % 256)
@@ -163,6 +165,9 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
         newContents = writeBuffer.contents[:valuePtr] + b.contents[bytesToWrite:]
         dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
 
+    if fileINode.filePointer > fileINode.filesize:
+        fileINode.filesize = fileINode.filePointer
+
     
 
 # deletes a file and marks its blocks as free on disk. 
@@ -178,12 +183,9 @@ def tfs_delete(FD:fileDescriptor) -> int:
     # for each data block in the root directory, search for the entry that points to index FD
     for dataBlockID in rootDirINode.dataBlockPtrs:
         dsk.readBlock(cmdid, dataBlockID, b)
-        found = False
         for i in range(0, 256, 16):
-            # fName = b.contents[i:i+12].decode("utf-8")    # don't need this line for this algorithm
             fileINodeIndex = int.from_bytes(b.contents[i+12:i+16], 'little')
 
-            
             if fileINodeIndex == FD:
                 # remove the given entry from the directory
                 newBlockContents = b.contents[:i] + bytes(16) + b.contents[i+16:]
@@ -194,15 +196,11 @@ def tfs_delete(FD:fileDescriptor) -> int:
                 dsk.readBlock(cmdid, fileINodeIndex, b)
                 fileINode = bytesToINode(b.contents)
                 for i in fileINode.dataBlockPtrs:
-                    cmd.freeBlocks = cmd.freeBlocks[0: i - 1] + '1' + cmd.freeBlocks[i + 1:]
+                    cmd.freeBlocks = cmd.freeBlocks[0: i] + '1' + cmd.freeBlocks[i + 1:]
             
                 # mark the file's inode as free
-                cmd.freeBlocks = cmd.freeBlocks[0: FD - 1] + '1' + cmd.freeBlocks[FD + 1:]
-                found = True
-                break
-
-        if found:
-            break
+                cmd.freeBlocks = cmd.freeBlocks[0: FD] + '1' + cmd.freeBlocks[FD + 1:]
+                return SuccessCodes.SUCCESS
 
 
 def tfs_readByte(FD:fileDescriptor, buff:buffer) -> int:

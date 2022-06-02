@@ -61,6 +61,29 @@ class superblock(block):
         output += int(self.freeBlocks, 2).to_bytes(len(self.freeBlocks)//8,'big')
         return output
 
+    def getNextFreeBlockIndex(self):
+        found = False
+
+        # save the next free block index because it will be modified below
+        returnIndex = self.nextFreeBlockIndex
+
+        while not found:
+            self.nextFreeBlockIndex += 1
+
+            # if we reach the end of the file system's available blocks,
+            # wrap around back to the first block
+            if self.nextFreeBlockIndex >= self.diskSize//256:
+                self.nextFreeBlockIndex = 0
+
+            # if the free block bitmap shows the block is free, break out of the loop
+            if self.freeBlocks[self.nextFreeBlockIndex] == '1':
+                found = True
+
+        # update the freeblocks bitmap
+        self.freeBlocks = self.freeBlocks[:returnIndex] + '0' + self.freeBlocks[returnIndex + 1:]
+        return returnIndex
+            
+
 
 def bytesToSuperblock(block:bytes):
         superblk = superblock(0)
