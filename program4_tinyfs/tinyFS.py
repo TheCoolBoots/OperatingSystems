@@ -57,7 +57,8 @@ def tfs_unmount() -> int:
         return ErrorCodes.DISKMOUNT
 
     # close all open files, committing them to disk
-    for i, entry in dynamicResourceTable.items():
+    files = list(dynamicResourceTable.keys())
+    for i in files:
         tfs_close(i)
 
     # write the superblock of the current FS to disk
@@ -67,7 +68,8 @@ def tfs_unmount() -> int:
     return dsk.closeDisk(cmdid) 
 
 def tfs_open(filename:str) -> fileDescriptor:
-    
+    global FDCounter
+
     b = buffer(BLOCKSIZE)
     dsk.readBlock(cmdid, cmd.rootDirINode, b)
     rootDirINode = bytesToINode(b.contents)

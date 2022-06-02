@@ -5,7 +5,6 @@ import libDisk as dsk
 from headers import *
 
 
-
 class test_scheduler(unittest.TestCase):
     def test_bytesToInode(self):
         nodeExpected = inode(4,1,13)
@@ -57,13 +56,26 @@ class test_scheduler(unittest.TestCase):
         file0INode.dataBlockPtrs[0] = 4
         file0INode.dataBlockPtrs[1] = 5
 
-        file0Data1 = list(range(0, 256))
-        file0Data2 = list(range(256, 0))
+        file0Data1 = bytes(list(range(0, 256)))
+        file0Data2 = bytes(list(range(256, 0)))
+        file0DataNode1 = dataNode(file0Data1)
+        file0DataNode2 = dataNode(file0Data2)
 
+        fakeDisk = disk(1792)
+        fakeDisk.blocks[0] = superblk
+        fakeDisk.blocks[1] = rootDirINode
+        fakeDisk.blocks[2] = rootDirDataBlock
+        fakeDisk.blocks[3] = file0INode
+        fakeDisk.blocks[4] = file0DataNode1
+        fakeDisk.blocks[5] = file0DataNode2
+
+        self.referenceDisk = fakeDisk
+
+        with open('program4_tinyfs/TestFiles/mkfsTest2.tfs', 'wb+') as f:
+            f.write(fakeDisk.serialize())  
         
 
-
-    def test_mount(self):
+    def test_mount_unmount(self):
         retCode = tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest1.tfs')
         self.assertEqual(retCode, SuccessCodes.SUCCESS)
         self.assertEqual(tfs.cmd, superblock(BLOCKSIZE * 5))
@@ -75,57 +87,17 @@ class test_scheduler(unittest.TestCase):
         retCode = tfs.tfs_unmount()
 
 
-    def test_tfs_open(self):
+    def test_seek_readByte(self):
+        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest2.tfs')
+        tfs.tfs_open('_______file1')
+        tfs.tfs_seek(0, 8)
+        b = buffer()
+        tfs.tfs_readByte(0, b)
+        self.assertEqual(b.contents, 8)
+        seekRetCode = tfs.tfs_seek(0, 512)
+        self.assertEqual(seekRetCode, ErrorCodes.ATENDOFFILE)
+        tfs.tfs_unmount()
 
-        self.assertEqual(tfs.tfs_open(" "), 0)
-        self.assertEqual(tfs.tfs_open(" "), 1)
-
-
-    # def test_tfs_close_IsOpen(self):
-    #     returnVal = tfs.tfs_open(" ")
-    #     self.assertEqual(tfs.tfs_close(" "), 1)
-
-    # def test_tfs_delete_FirstEntry(self):
-    #     returnVal = tfs.tfs_open(" ")
-    #     self.assertEqual(tfs.tfs_delete(0), 1)
-    
-    # def test_tfs_delete_NotFirstEntry(self):
-    #     returnVal0 = tfs.tfs_open(" ")
-    #     returnVal1 = tfs.tfs_open(" ")
-    #     returnVal2 = tfs.tfs_open(" ")
-    #     self.assertEqual(tfs.tfs_delete(2), 1)
-    
-    # def test_tfs_readByte_FirstEntry(self):
-    #     returnVal = tfs.tfs_open(" ")
-    #     b = buffer()
-    #     returnVal = tfs.tfs_readByte(0, b)
-    #     self.assertEqual(returnVal, 1)
-    #     self.assertEqual(b, " ")
-
-    # def test_tfs_readByte_NotFirstEntry(self):
-    #     returnVal0 = tfs.tfs_open(" ")
-    #     returnVal1 = tfs.tfs_open(" ")
-    #     returnVal2 = tfs.tfs_open(" ")
-    #     b = buffer()
-    #     returnVal = tfs.tfs_readByte(2, b)
-    #     self.assertEqual(returnVal, 1)
-    #     self.assertEqual(b, " ")
-
-
-    # def test_tfs_seek_inBounds(self):
-    #     returnVal0 = tfs.tfs_open(" ")
-    #     self.assertEqual(tfs.tfs_seek(0, 5), 1)
-    
-    # def test_tfs_seek_outOfBounds(self):
-    #     returnVal = tfs.tfs_open(" ")
-    #     self.assertEqual(tfs.tfs_seek(0, ), -7) #figure out a value that would make it not move pointer 
-
-    # def test_tfs_rename_IsOpen(self):
-    #     returnVal = tfs.tfs_open(" ")
-    #     self.assertEqual(tfs.tfs_rename(0, "NEWNAMETEST"), 1) 
-    
-    # def test_tfs_rename_IsNotOpen(self): 
-    #     self.assertEqual(tfs.tfs_rename(0, "NEWNAMETEST"), 0) 
         
 
 if __name__ == '__main__':
