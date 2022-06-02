@@ -100,6 +100,11 @@ class test_scheduler(unittest.TestCase):
         self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
         self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
         self.assertEqual(len(dynamicResourceTableEntry.keys), 0)
+    
+    def test_tfs_write(self):
+        openCode = tfs.tfs_open("file0")
+        writeData = [0] * 512
+        tfs.tfs_write(0, writeData, 500)
 
     
    
