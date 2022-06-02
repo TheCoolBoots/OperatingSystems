@@ -47,6 +47,7 @@ class superblock(block):
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
+        # TODO change to array of 1's and 0's to be more efficient
         self.freeBlocks = '00'+('1'*1934) # 0 is not free, 1 is free 
 
         # 256 - 12 - 2 bytes free for free block tracking
@@ -59,6 +60,7 @@ class superblock(block):
         output += self.diskSize.to_bytes(4, 'little')
         output += int(self.freeBlocks, 2).to_bytes(len(self.freeBlocks)//8,'big')
         return output
+
 
 def bytesToSuperblock(block:bytes):
         superblk = superblock(0)
@@ -97,6 +99,7 @@ class inode(block):
         
         return output
 
+
 def bytesToINode(block:bytes):
         # print(block[0:4])
         filesize = int.from_bytes(block[0:4], 'little')
@@ -125,6 +128,13 @@ class dataNode(block):
 
     def toBytes(self) -> bytes:
         return self.content
+
+
+class freeNode(block):
+    def __init__(self):
+        self.content = bytes(256)
+    def toBytes(self) -> bytes:
+        pass
 
 
 class dynamicResourceTableEntry:  #file descriptor and inode indexes

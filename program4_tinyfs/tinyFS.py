@@ -7,8 +7,8 @@ fileDescriptor = int
 dynamicResourceTable : Dict[int, dynamicResourceTableEntry] = {}
 FDCounter = 0
 
-currentMountedDisk:superblock = None
-currentMountedDiskID:int = None
+cmd:superblock = None
+cmdid:int = None
 
 def tfs_mkfs(diskName:str, diskSizeBytes:int) -> int:
     # create a brand new disk
@@ -54,7 +54,7 @@ def tfs_unmount() -> int:
     # close all open files, committing them to disk
 
     # write the superblock of the current FS to disk
-    dsk.writeBlock(currentMountedDiskID, 0, buffer(currentMountedDisk.toBytes()))
+    dsk.writeBlock(cmdid, 0, buffer(currentMountedDisk.toBytes()))
     
     currentMountedDisk = None
     return dsk.closeDisk(currentMountedDisk) 
@@ -62,11 +62,11 @@ def tfs_unmount() -> int:
 def tfs_open(filename:str) -> fileDescriptor:
     
     b = buffer(BLOCKSIZE)
-    dsk.readBlock(currentMountedDiskID, currentMountedDisk.rootDirINode, b)
+    dsk.readBlock(cmdid, cmd.rootDirINode, b)
     rootDirINode = bytesToINode(b.contents)
 
     for dataBlockID in rootDirINode.dataBlockPtrs:
-        dsk.readBlock(currentMountedDiskID, dataBlockID, b)
+        dsk.readBlock(cmdid, dataBlockID, b)
         for i in range(0, 256, 16):
             fName = b.contents[i:i+12].decode("utf-8")
             fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
@@ -74,7 +74,7 @@ def tfs_open(filename:str) -> fileDescriptor:
 
                 #make dynamicResourceTableEntry, add it to the table 
                 b = buffer()
-                dsk.readBlock(currentMountedDiskID, fileINode, b)
+                dsk.readBlock(cmdid, fileINode, b)
                 dynamicResourceTable[FDCounter] = dynamicResourceTableEntry(fileINode, bytesToINode(b.contents))
             
                 #increment FD Counter
@@ -89,7 +89,7 @@ def tfs_close(FD:fileDescriptor) -> int:
     try:
         entry = dynamicResourceTable.pop(FD)
         b = buffer(entry.memINode.toBytes())
-        dsk.writeBlock(currentMountedDiskID, entry.inodeBlockNum, b)
+        dsk.writeBlock(cmdid, entry.inodeBlockNum, b)
 
         return SuccessCodes.SUCCESS
     except KeyError:
@@ -121,7 +121,7 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
 
     # read the block @ dataBlockIndex
     b = buffer()
-    dsk.readBlock(currentMountedDiskID, fileINode.dataBlockPtrs[dataBlockIndex], b)
+    dsk.readBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], b)
 
     # we will fill the block that the file pointer is in
     if overwriteInBlock < bytesToWrite:
@@ -129,7 +129,7 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
         newContents = b.contents[0:overwriteInBlock] + writeBuffer[valuePtr:valuePtr+overwriteInBlock]
         
         # write the new contents to the disk
-        dsk.writeBlock(currentMountedDiskID, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
+        dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
 
         # increment the current index of the values we are writing
         valuePtr += overwriteInBlock
@@ -144,14 +144,14 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
         newContents = b.contents[0:blockPtr] + writeBuffer[valuePtr:valuePtr+bytesToWrite] + b.contents[blockPtr + bytesToWrite:]
         
         # write the new contents to the disk
-        dsk.writeBlock(currentMountedDiskID, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
+        dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
 
         # increment the current index of the values we are writing
         bytesToWrite = 0
 
     # write all the blocks that will fill up a whole block
     while bytesToWrite >= BLOCKSIZE:
-        dsk.writeBlock(currentMountedDiskID, fileINode.dataBlockPtrs[dataBlockIndex], writeBuffer.contents[valuePtr:valuePtr+BLOCKSIZE])
+        dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], writeBuffer.contents[valuePtr:valuePtr+BLOCKSIZE])
         valuePtr += BLOCKSIZE
         bytesToWrite -= BLOCKSIZE
         fileINode.filePointer += BLOCKSIZE
@@ -159,41 +159,57 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
 
     if bytesToWrite > 0:
         # write the remaining bytes in values to the next data block
-        dsk.readBlock(currentMountedDiskID, fileINode.dataBlockPtrs[dataBlockIndex], b)
+        dsk.readBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], b)
         newContents = writeBuffer.contents[:valuePtr] + b.contents[bytesToWrite:]
-        dsk.writeBlock(currentMountedDiskID, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
+        dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
 
     
 
 # deletes a file and marks its blocks as free on disk. 
 def tfs_delete(FD:fileDescriptor) -> int:
-
     
-    #remove it from table 
-    entry = dynamicResourceTable.pop(FD)
+    # remove it from table 
+    oldTableEntry = dynamicResourceTable.pop(FD)
 
     b = buffer(BLOCKSIZE)
-    dsk.readBlock(currentMountedDiskID, currentMountedDisk.rootDirINode, b)
+    dsk.readBlock(cmdid, cmd.rootDirINode, b)
     rootDirINode = bytesToINode(b.contents)
 
+    # for each data block in the root directory, search for the entry that points to index FD
     for dataBlockID in rootDirINode.dataBlockPtrs:
-        dsk.readBlock(currentMountedDiskID, dataBlockID, b)
+        dsk.readBlock(cmdid, dataBlockID, b)
+        found = False
         for i in range(0, 256, 16):
-            fName = b.contents[i:i+12].decode("utf-8")
-            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
-            for dataBlockPTR in fileINode.dataBlockPtrs:
-                index = int.from_bytes(dataBlockPTR)
-                currentMountedDisk.rootDirINode.freeBlocks = currentMountedDisk.rootDirINode.freeBlocks[0: index - 1] + '1' + currentMountedDisk.rootDirINode.freeBlocks[index + 1:]
+            # fName = b.contents[i:i+12].decode("utf-8")    # don't need this line for this algorithm
+            fileINodeIndex = int.from_bytes(b.contents[i+12:i+16], 'little')
+
             
-    #decrement counter
-    FDCounter = FDCounter - 1
-    pass
+            if fileINodeIndex == FD:
+                # remove the given entry from the directory
+                newBlockContents = b.contents[:i] + bytes(16) + b.contents[i+16:]
+                dsk.writeBlock(cmdid, dataBlockID, buffer(newBlockContents))
+
+
+                # mark all data blocks that the inode points to as free
+                dsk.readBlock(cmdid, fileINodeIndex, b)
+                fileINode = bytesToINode(b.contents)
+                for i in fileINode.dataBlockPtrs:
+                    cmd.freeBlocks = cmd.freeBlocks[0: i - 1] + '1' + cmd.freeBlocks[i + 1:]
+            
+                # mark the file's inode as free
+                cmd.freeBlocks = cmd.freeBlocks[0: FD - 1] + '1' + cmd.freeBlocks[FD + 1:]
+                found = True
+                break
+
+        if found:
+            break
+
 
 def tfs_readByte(FD:fileDescriptor, buff:buffer) -> int:
     pass
 
 def tfs_seek(FD:fileDescriptor, offset:int) -> int:
-    INode = dynamicResourceTable.get(fileDescriptor)
+    INode = dynamicResourceTable.get(FD).memINode
     checkValue = INode.filePointer + offset
     if(checkValue <= INode.filesize):
         INode.filePointer = INode.filePointer + offset
