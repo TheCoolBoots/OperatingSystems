@@ -167,26 +167,24 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
 
 # deletes a file and marks its blocks as free on disk. 
 def tfs_delete(FD:fileDescriptor) -> int:
-    fileDescriptorToDelete = None
-    inodeBlockNumToDelete = None
 
-    #find it in dynamicResourceTable
-    for entry in dynamicResourceTable:
-        if entry.fileDescriptor == FD:
-            fileDescriptorToDelete = entry.fileDescriptor
-            inodeBlockNumToDelete = entry.inodeBlockNum
-            break
     
     #remove it from table 
-    tfs_close(FD)
+    entry = dynamicResourceTable.pop(FD)
+
+    b = buffer(BLOCKSIZE)
+    dsk.readBlock(currentMountedDiskID, currentMountedDisk.rootDirINode, b)
+    rootDirINode = bytesToINode(b.contents)
+
+    for dataBlockID in rootDirINode.dataBlockPtrs:
+        dsk.readBlock(currentMountedDiskID, dataBlockID, b)
+        for i in range(0, 256, 16):
+            fName = b.contents[i:i+12].decode("utf-8")
+            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
+            for dataBlockPTR in fileINode.dataBlockPtrs:
+                index = int.from_bytes(dataBlockPTR)
+                currentMountedDisk.rootDirINode.freeBlocks = currentMountedDisk.rootDirINode.freeBlocks[0: index - 1] + '1' + currentMountedDisk.rootDirINode.freeBlocks[index + 1:]
             
-
-    #find where the file is on the disk
-
-    #remove it 
-
-    #reset the nextFreeBlockIndex in super block
-
     #decrement counter
     FDCounter = FDCounter - 1
     pass
@@ -195,7 +193,12 @@ def tfs_readByte(FD:fileDescriptor, buff:buffer) -> int:
     pass
 
 def tfs_seek(FD:fileDescriptor, offset:int) -> int:
-    pass
+    INode = dynamicResourceTable.get(fileDescriptor)
+    checkValue = INode.filePointer + offset
+    if(checkValue <= INode.filesize):
+        INode.filePointer = INode.filePointer + offset
+        return SuccessCodes.SUCCESS
+
 
 def tfs_rename(FD:fileDescriptor, newName:str) -> int:
     pass
