@@ -135,6 +135,21 @@ class test_scheduler(unittest.TestCase):
 
         self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
         self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
+
+
+    def test_tfs_close_withWrite(self):
+        openCode = tfs.tfs_open("file0")
+        writeData = [0] * 512
+        tfs.tfs_write(0, writeData, 500)
+        
+        expectedfile0Data1 = [0] * 256
+        zerosList = [0] * 500 
+        numbersList = bytes(list(range(501, 512)))
+        expectedfile0Data2 = zerosList + numbersList
+
+        self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
+        self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
+    
     
     
     
