@@ -52,6 +52,8 @@ def tfs_unmount() -> int:
         return ErrorCodes.DISKMOUNT
 
     # close all open files, committing them to disk
+    for i, entry in dynamicResourceTable.items():
+        tfs_close(i)
 
     # write the superblock of the current FS to disk
     dsk.writeBlock(currentMountedDiskID, 0, buffer(currentMountedDisk.toBytes()))
@@ -223,7 +225,7 @@ def tfs_rename(FD:fileDescriptor, newName:str) -> int:
                 dsk.writeBlock(currentMountedDiskID, dataBlockID, b)
                 found = True
                 return SuccessCodes.SUCCESS
-    return ErrorCodes.FILERENAMEERROR   
+    return ErrorCodes.FILERENAMEERROR    
 
 
 def tfs_readdir() -> None:
