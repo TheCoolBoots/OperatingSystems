@@ -1,4 +1,5 @@
 from enum import Enum
+from math import ceil
 
 class buffer():
     def __init__(self, contents:bytes = bytes(256)):
@@ -25,17 +26,19 @@ class disk():   # using the log file system
         if diskSizeBytes % BLOCKSIZE != 0:
             raise ValueError(f"diskSizeBytes must be divisible by BLOCKSIZE({BLOCKSIZE})")
         self.diskSizeBytes = diskSizeBytes
-        self.maxNumBlocks = diskSizeBytes/BLOCKSIZE
+        self.maxNumBlocks = ceil(diskSizeBytes/BLOCKSIZE)
         self.blocks:list[block] = [freeNode()] * self.maxNumBlocks
 
         self.blocks[0] = superblock(diskSizeBytes)
-        self.blocks[1] = inode(0)               # inode of root directory
+        self.blocks[1] = inode(0, 1)               # inode of root directory
         self.blocks[2] = dataNode(bytes(256))   # data of root directory
 
     def serialize(self) -> bytes:
         output = bytes()
         for block in self.blocks:
             output += block.toBytes()
+
+        return output
 
 
 class block():
@@ -50,7 +53,7 @@ class superblock(block):
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
         # TODO change to array of 1's and 0's to be more efficient
-        self.freeBlocks = '00'+('1'*1934) # 0 is not free, 1 is free 
+        self.freeBlocks = '000'+('1'*1933) # 0 is not free, 1 is free 
 
         # 256 - 12 - 2 bytes free for free block tracking
         # = 242 bytes = 1936 bits
@@ -84,6 +87,11 @@ class superblock(block):
         # update the freeblocks bitmap
         self.freeBlocks = self.freeBlocks[:returnIndex] + '0' + self.freeBlocks[returnIndex + 1:]
         return returnIndex
+
+    def __eq__(self, other):
+        if type(other) != superblock:
+            return False
+        return self.magicNumber == other.magicNumber and self.nextFreeBlockIndex == other.nextFreeBlockIndex and self.diskSize == other.diskSize and self.freeBlocks == other.freeBlocks
             
 
 
@@ -159,7 +167,7 @@ class freeNode(block):
     def __init__(self):
         self.content = bytes(256)
     def toBytes(self) -> bytes:
-        pass
+        return self.content
 
 
 class dynamicResourceTableEntry:  #file descriptor and inode indexes

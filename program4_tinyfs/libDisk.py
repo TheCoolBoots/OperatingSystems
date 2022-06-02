@@ -6,15 +6,17 @@ from typing import Dict
 openFiles:Dict[int, FileIO] = {}
 nextDiskID = 0
 
-def openDisk(diskFile:str, nBytes:int) -> int:
+def openDisk(diskFile:str, nBytes:int = 0) -> int:
     if nBytes % BLOCKSIZE != 0:
         return ErrorCodes.BLOCKSIZE
 
     try:
-        openFile = open(diskFile, 'rwb+')
+
         openFile = open(diskFile, 'rb+')
+        # openFile = open(diskFile, 'rb+')
+        global nextDiskID
         openFiles[nextDiskID] = openFile
-        nextDiskID = nextDiskID + 1
+        nextDiskID +=  1
         return SuccessCodes.SUCCESS
     except FileNotFoundError:
         return ErrorCodes.DISKNOTFOUND
