@@ -14,6 +14,8 @@ class ErrorCodes(Enum):
     INVALIDBLOCKNUM = -4
     DISKMOUNT = -5
     IOERROR = -6
+    ATENDOFFILE = -7
+    FILERENAMEERROR = -8
 
 BLOCKSIZE = 256
 

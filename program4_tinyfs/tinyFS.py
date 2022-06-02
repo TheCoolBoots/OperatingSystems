@@ -204,7 +204,18 @@ def tfs_delete(FD:fileDescriptor) -> int:
 
 
 def tfs_readByte(FD:fileDescriptor, buff:buffer) -> int:
-    pass
+    INode = dynamicResourceTable[FD].memINode
+     
+    if(INode.filePointer < INode.filesize):
+        dataBlockIndex = INode.filePointer//BLOCKSIZE
+        b = buffer()
+        dsk.readBlock(currentMountedDiskID, INode.dataBlockPtrs[dataBlockIndex], b)
+        buff.contents = b.contents[INode.filePointer%BLOCKSIZE]
+        INode.filePointer = INode.filePointer + 1
+        return SuccessCodes.SUCCESS
+    else:
+        return ErrorCodes.ATENDOFFILE
+
 
 def tfs_seek(FD:fileDescriptor, offset:int) -> int:
     INode = dynamicResourceTable.get(FD).memINode
@@ -215,7 +226,23 @@ def tfs_seek(FD:fileDescriptor, offset:int) -> int:
 
 
 def tfs_rename(FD:fileDescriptor, newName:str) -> int:
-    pass
+    b = buffer()
+    dsk.readBlock(currentMountedDiskID, currentMountedDisk.rootDirINode, b)
+    rootDirINode = bytesToINode(b.contents)
+
+    for dataBlockID in rootDirINode.dataBlockPtrs:
+        dsk.readBlock(currentMountedDiskID, dataBlockID, b)
+        ##find the correct data block
+        for i in range(0, 256, 16):
+            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
+
+            if fileINode == FD:
+                b.contents = b.contents[0:i] + newName.encode("utf-8") + b.contents[i+12:]
+                dsk.writeBlock(currentMountedDiskID, dataBlockID, b)
+                found = True
+                return SuccessCodes.SUCCESS
+    return ErrorCodes.FILERENAMEERROR   
+
 
 def tfs_readdir() -> None:
     pass
