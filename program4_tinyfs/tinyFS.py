@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 from headers import *
 import libDisk as dsk
 from typing import Dict
@@ -182,10 +181,6 @@ def tfs_delete(FD:fileDescriptor) -> int:
             for dataBlockPTR in fileINode.dataBlockPtrs:
                 index = int.from_bytes(dataBlockPTR)
                 currentMountedDisk.rootDirINode.freeBlocks = currentMountedDisk.rootDirINode.freeBlocks[0: index - 1] + '1' + currentMountedDisk.rootDirINode.freeBlocks[index + 1:]
-            
-    #decrement counter
-    FDCounter = FDCounter - 1
-    pass
 
 def tfs_readByte(FD:fileDescriptor, buff:buffer) -> int:
     INode = dynamicResourceTable[FD].memINode
@@ -207,6 +202,7 @@ def tfs_seek(FD:fileDescriptor, offset:int) -> int:
     if(checkValue <= INode.filesize):
         INode.filePointer = INode.filePointer + offset
         return SuccessCodes.SUCCESS
+    return ErrorCodes.ATENDOFFILE
 
 
 def tfs_rename(FD:fileDescriptor, newName:str) -> int:
@@ -223,7 +219,6 @@ def tfs_rename(FD:fileDescriptor, newName:str) -> int:
             if fileINode == FD:
                 b.contents = b.contents[0:i] + newName.encode("utf-8") + b.contents[i+12:]
                 dsk.writeBlock(currentMountedDiskID, dataBlockID, b)
-                found = True
                 return SuccessCodes.SUCCESS
     return ErrorCodes.FILERENAMEERROR    
 

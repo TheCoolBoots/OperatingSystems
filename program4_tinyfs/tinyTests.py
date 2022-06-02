@@ -1,6 +1,8 @@
 import unittest
+import tinyFS as tfs
 
 from headers import *
+
 
 
 class test_scheduler(unittest.TestCase):
@@ -32,8 +34,62 @@ class test_scheduler(unittest.TestCase):
         self.assertEqual(nodeActual.diskSize, 1991)
         self.assertEqual(len(nodeActual.freeBlocks), 1936)
         self.assertEqual(int(nodeActual.freeBlocks, 2), int('00' + ('1' * 1934), 2))
-        
+    
+    def test_tfs_open(self):
 
+        self.assertEqual(tfs.tfs_open(" "), 0)
+        self.assertEqual(tfs.tfs_open(" "), 1)
+
+
+    def test_tfs_close_IsOpen(self):
+        returnVal = tfs.tfs_open(" ")
+        self.assertEqual(tfs.tfs_close(" "), 1)
+    
+    def test_tfs_close_IsNotOpen(self):
+        self.assertEqual(tfs.tfs_close(" "), -1)
+
+    def test_tfs_delete_FirstEntry(self):
+        returnVal = tfs.tfs_open(" ")
+        self.assertEqual(tfs.tfs_delete(0), 1)
+    
+    def test_tfs_delete_NotFirstEntry(self):
+        returnVal0 = tfs.tfs_open(" ")
+        returnVal1 = tfs.tfs_open(" ")
+        returnVal2 = tfs.tfs_open(" ")
+        self.assertEqual(tfs.tfs_delete(2), 1)
+    
+    def test_tfs_readByte_FirstEntry(self):
+        returnVal = tfs.tfs_open(" ")
+        b = buffer()
+        returnVal = tfs.tfs_readByte(0, b)
+        self.assertEqual(returnVal, 1)
+        self.assertEqual(b, " ")
+
+    def test_tfs_readByte_NotFirstEntry(self):
+        returnVal0 = tfs.tfs_open(" ")
+        returnVal1 = tfs.tfs_open(" ")
+        returnVal2 = tfs.tfs_open(" ")
+        b = buffer()
+        returnVal = tfs.tfs_readByte(2, b)
+        self.assertEqual(returnVal, 1)
+        self.assertEqual(b, " ")
+
+
+    def test_tfs_seek_inBounds(self):
+        returnVal0 = tfs.tfs_open(" ")
+        self.assertEqual(tfs.tfs_seek(0, 5), 1)
+    
+    def test_tfs_seek_outOfBounds(self):
+        returnVal = tfs.tfs_open(" ")
+        self.assertEqual(tfs.tfs_seek(0, ), -7) #figure out a value that would make it not move pointer 
+
+    def test_tfs_rename_IsOpen(self):
+        returnVal = tfs.tfs_open(" ")
+        self.assertEqual(tfs.tfs_rename(0, "NEWNAMETEST"), 1) 
+    
+    def test_tfs_rename_IsNotOpen(self): 
+        self.assertEqual(tfs.tfs_rename(0, "NEWNAMETEST"), 0) 
+        
 
 if __name__ == '__main__':
     unittest.main()
