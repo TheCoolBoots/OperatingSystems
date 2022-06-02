@@ -150,6 +150,11 @@ def bytesToINode(block:bytes):
 class dataNode(block):
     def __init__(self, content:bytes):
         self.content = content    
+    def __eq__(self, other):
+        if self.content == other.content:
+            return True
+        else:
+            return False 
 
     # Directory data block structure:
     """
