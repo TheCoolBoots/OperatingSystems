@@ -174,4 +174,10 @@ class dynamicResourceTableEntry:  #file descriptor and inode indexes
     def __init__(self, inodeBlockNum:int, memINode:inode):
         self.inodeBlockNum = inodeBlockNum
         self.memINode = memINode
+    
+    def __eq__(self, other):
+        if self.inodeBlockNum == other.inodeBlockNum and self.memINode == other.memINode:
+            return True
+        else:
+            return False
         

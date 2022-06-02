@@ -55,10 +55,19 @@ class test_scheduler(unittest.TestCase):
         retCode = tfs.tfs_unmount()
 
 
-    # def test_tfs_open(self):
+    def test_tfs_open(self):
+        returnVal = tfs.tfs_open("file0")
+        self.assertEqual(returnVal, SuccessCodes.SUCCESS)
+        self.assertEqual(tfs.dynamicResourceTable[0], dynamicResourceTableEntry(0,  ))
+        self.assertEqual(tfs.FDCounter, 1)
 
-    #     self.assertEqual(tfs.tfs_open(" "), 0)
-    #     self.assertEqual(tfs.tfs_open(" "), 1)
+
+        
+
+
+
+        self.assertEqual(tfs.tfs_open(" "), )
+       
 
 
     # def test_tfs_close_IsOpen(self):
