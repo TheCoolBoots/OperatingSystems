@@ -255,7 +255,17 @@ def tfs_rename(FD:fileDescriptor, newName:str) -> int:
 
 
 def tfs_readdir() -> None:
-    pass
+    b = buffer(BLOCKSIZE)
+    dsk.readBlock(cmdid, cmd.rootDirINode, b)
+    rootDirINode = bytesToINode(b.contents)
+
+    for dataBlockID in rootDirINode.dataBlockPtrs:
+        dsk.readBlock(cmdid, dataBlockID, b)
+        for i in range(0, 256, 16):
+            fName = b.contents[i:i+12].decode("utf-8")
+            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
+            print(fName)
+
 
 
 
