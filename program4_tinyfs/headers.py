@@ -17,6 +17,7 @@ class ErrorCodes(Enum):
     IOERROR = -6
     ATENDOFFILE = -7
     FILERENAMEERROR = -8
+    FILENOTFOUND = -9
 
 BLOCKSIZE = 256
 
@@ -36,7 +37,8 @@ class disk():   # using the log file system
     def serialize(self) -> bytes:
         output = bytes()
         for block in self.blocks:
-            output += block.toBytes()
+            b = block.toBytes()
+            output += b
 
         return output
 

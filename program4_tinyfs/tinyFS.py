@@ -1,3 +1,4 @@
+from msilib.schema import Error
 from headers import *
 import libDisk as dsk
 from typing import Dict
@@ -67,6 +68,7 @@ def tfs_unmount() -> int:
     cmd = None
     return dsk.closeDisk(cmdid) 
 
+
 def tfs_open(filename:str) -> fileDescriptor:
     global FDCounter
 
@@ -75,23 +77,26 @@ def tfs_open(filename:str) -> fileDescriptor:
     rootDirINode = bytesToINode(b.contents)
 
     for dataBlockID in rootDirINode.dataBlockPtrs:
-        dsk.readBlock(cmdid, dataBlockID, b)
-        for i in range(0, 256, 16):
-            fName = b.contents[i:i+12].decode("utf-8").replace('_', '')
-            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
-            if(fName == filename):
+        if dataBlockID != 0:
+            dsk.readBlock(cmdid, dataBlockID, b)
+            for i in range(0, 256, 16):
+                fName = b.contents[i:i+12].decode("utf-8").replace('_', '')
+                fileINodeIndex = int.from_bytes(b.contents[i+12:i+16], 'little')
+                if(fName == filename):
 
-                #make dynamicResourceTableEntry, add it to the table 
-                b = buffer()
-                dsk.readBlock(cmdid, fileINode, b)
-                dynamicResourceTable[FDCounter] = dynamicResourceTableEntry(fileINode, bytesToINode(b.contents))
-            
-                #increment FD Counter
-                returnFD = FDCounter
-                FDCounter = FDCounter + 1
+                    #make dynamicResourceTableEntry, add it to the table 
+                    b = buffer()
+                    dsk.readBlock(cmdid, fileINodeIndex, b)
+                    fileINode = bytesToINode(b.contents)
+                    dynamicResourceTable[FDCounter] = dynamicResourceTableEntry(fileINodeIndex, fileINode)
+                
+                    #increment FD Counter
+                    returnFD = FDCounter
+                    FDCounter = FDCounter + 1
 
-                #return the file descriptor
-                return returnFD
+                    #return the file descriptor
+                    return returnFD
+    return ErrorCodes.FILENOTFOUND
 
 
 def tfs_close(FD:fileDescriptor) -> int:
@@ -191,25 +196,27 @@ def tfs_delete(FD:fileDescriptor) -> int:
 
     # for each data block in the root directory, search for the entry that points to index FD
     for dataBlockID in rootDirINode.dataBlockPtrs:
-        dsk.readBlock(cmdid, dataBlockID, b)
-        for i in range(0, 256, 16):
-            fileINodeIndex = int.from_bytes(b.contents[i+12:i+16], 'little')
+        if dataBlockID != 0:
+            dsk.readBlock(cmdid, dataBlockID, b)
+            for i in range(0, 256, 16):
+                fileINodeIndex = int.from_bytes(b.contents[i+12:i+16], 'little')
 
-            if fileINodeIndex == FD:
-                # remove the given entry from the directory
-                newBlockContents = b.contents[:i] + bytes(16) + b.contents[i+16:]
-                dsk.writeBlock(cmdid, dataBlockID, buffer(newBlockContents))
+                if fileINodeIndex == oldTableEntry.inodeBlockNum:
+                    # remove the given entry from the directory
+                    newBlockContents = b.contents[:i] + bytes(16) + b.contents[i+16:]
+                    dsk.writeBlock(cmdid, dataBlockID, buffer(newBlockContents))
 
-
-                # mark all data blocks that the inode points to as free
-                dsk.readBlock(cmdid, fileINodeIndex, b)
-                fileINode = bytesToINode(b.contents)
-                for i in fileINode.dataBlockPtrs:
-                    cmd.freeBlocks = cmd.freeBlocks[0: i] + '1' + cmd.freeBlocks[i + 1:]
-            
-                # mark the file's inode as free
-                cmd.freeBlocks = cmd.freeBlocks[0: FD] + '1' + cmd.freeBlocks[FD + 1:]
-                return SuccessCodes.SUCCESS
+                    # mark all data blocks that the inode points to as free
+                    dsk.readBlock(cmdid, fileINodeIndex, b)
+                    fileINode = bytesToINode(b.contents)
+                    for i in fileINode.dataBlockPtrs:
+                        # NOTE this may be able to be optimized
+                        if i != 0:
+                            cmd.freeBlocks = cmd.freeBlocks[0: i] + '1' + cmd.freeBlocks[i + 1:]
+                
+                    # mark the file's inode as free
+                    cmd.freeBlocks = cmd.freeBlocks[0: oldTableEntry.inodeBlockNum] + '1' + cmd.freeBlocks[oldTableEntry.inodeBlockNum + 1:]
+                    return SuccessCodes.SUCCESS
 
 
 def tfs_readByte(FD:fileDescriptor, buff:buffer) -> int:
@@ -240,32 +247,39 @@ def tfs_rename(FD:fileDescriptor, newName:str) -> int:
     dsk.readBlock(cmdid, cmd.rootDirINode, b)
     rootDirINode = bytesToINode(b.contents)
 
-    for dataBlockID in rootDirINode.dataBlockPtrs:
-        dsk.readBlock(cmdid, dataBlockID, b)
-        ##find the correct data block
-        for i in range(0, 256, 16):
-            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
+    if len(newName) > 12:
+        return ErrorCodes.FILERENAMEERROR
+    newName = '_'*(12-len(newName)) + newName
 
-            if fileINode == FD:
-                b.contents = b.contents[0:i] + newName.encode("utf-8") + b.contents[i+12:]
-                dsk.writeBlock(cmdid, dataBlockID, b)
-                return SuccessCodes.SUCCESS
+    for dataBlockID in rootDirINode.dataBlockPtrs:
+        if dataBlockID != 0:
+            dsk.readBlock(cmdid, dataBlockID, b)
+            ##find the correct data block
+            for i in range(0, 256, 16):
+                fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
+
+                if fileINode == dynamicResourceTable[FD].inodeBlockNum:
+                    b.contents = b.contents[0:i] + newName.encode("utf-8") + b.contents[i+12:]
+                    dsk.writeBlock(cmdid, dataBlockID, b)
+                    return SuccessCodes.SUCCESS
     return ErrorCodes.FILERENAMEERROR    
 
 
-def tfs_readdir() -> None:
+def tfs_readdir():
     b = buffer(BLOCKSIZE)
     dsk.readBlock(cmdid, cmd.rootDirINode, b)
     rootDirINode = bytesToINode(b.contents)
 
+    output = []
+
     for dataBlockID in rootDirINode.dataBlockPtrs:
-        dsk.readBlock(cmdid, dataBlockID, b)
-        for i in range(0, 256, 16):
-            fName = b.contents[i:i+12].decode("utf-8")
-            fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
-            print(fName)
+        if dataBlockID != 0:
+            dsk.readBlock(cmdid, dataBlockID, b)
+            for i in range(0, 256, 16):
+                fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
+                if fileINode != 0:
+                    fName = b.contents[i:i+12].decode("utf-8").replace('_', '')
+                    output.append(fName)
+                    print(fName)
 
-
-
-
-
+    return output
