@@ -134,11 +134,9 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
     dsk.readBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], b)
 
     # if we will fill the block that the file pointer is in
-    if overwriteInBlock == BLOCKSIZE:
-        pass
-    elif overwriteInBlock < bytesToWrite:
+    if overwriteInBlock < bytesToWrite:
         # build the contents of the new block
-        newContents = b.contents[0:overwriteInBlock] + writeBuffer.contents[valuePtr:valuePtr+overwriteInBlock]
+        newContents = b.contents[0:fileINode.filePointer % BLOCKSIZE] + writeBuffer.contents[valuePtr:valuePtr+overwriteInBlock]
         
         # write the new contents to the disk
         dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
