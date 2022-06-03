@@ -111,7 +111,7 @@ class inode(block):
         self.filesize = filesize        # 4 byte integer
         self.filetype = filetype        # 2 byte int; 0 = regular, 1 = directory
         self.permissions = permissions  # 2 byte integer
-        self.owner = owner              # 8 byte string
+        # self.owner = owner              # 8 byte string
         self.owner = '_'*(8-len(owner)) + owner
         self.filePointer = filePointer  # 4 byte integer
         
@@ -131,6 +131,11 @@ class inode(block):
             output += ptr.to_bytes(4, 'little')
         
         return output
+
+    def __eq__(self, other):
+        if type(other) != inode:
+            return False
+        return self.dataBlockPtrs == other.dataBlockPtrs and self.filesize == other.filesize and self.filetype == other.filetype
 
 
 def bytesToINode(block:bytes):
@@ -181,8 +186,9 @@ class dynamicResourceTableEntry:  #file descriptor and inode indexes
         self.memINode = memINode
     
     def __eq__(self, other):
-        if self.inodeBlockNum == other.inodeBlockNum and self.memINode == other.memINode:
-            return True
-        else:
+        if type(other) != dynamicResourceTableEntry:
             return False
+        hello = 1
+        return self.inodeBlockNum == other.inodeBlockNum and self.memINode == other.memINode
+
         

@@ -77,7 +77,7 @@ def tfs_open(filename:str) -> fileDescriptor:
     for dataBlockID in rootDirINode.dataBlockPtrs:
         dsk.readBlock(cmdid, dataBlockID, b)
         for i in range(0, 256, 16):
-            fName = b.contents[i:i+12].decode("utf-8")
+            fName = b.contents[i:i+12].decode("utf-8").replace('_', '')
             fileINode = int.from_bytes(b.contents[i+12:i+16], 'little')
             if(fName == filename):
 
@@ -107,7 +107,7 @@ def tfs_close(FD:fileDescriptor) -> int:
 
 def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
     fileINode = dynamicResourceTable[FD].memINode
-    bytesToWrite = len(writeBuffer.contents)
+    bytesToWrite = size
     valuePtr = 0
 
 
@@ -134,7 +134,9 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
     dsk.readBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], b)
 
     # if we will fill the block that the file pointer is in
-    if overwriteInBlock < bytesToWrite:
+    if overwriteInBlock == BLOCKSIZE:
+        pass
+    elif overwriteInBlock < bytesToWrite:
         # build the contents of the new block
         newContents = b.contents[0:overwriteInBlock] + writeBuffer.contents[valuePtr:valuePtr+overwriteInBlock]
         
@@ -161,7 +163,7 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
 
     # write all the blocks that will fill up a whole block
     while bytesToWrite >= BLOCKSIZE:
-        dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], writeBuffer.contents[valuePtr:valuePtr+BLOCKSIZE])
+        dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(writeBuffer.contents[valuePtr:valuePtr+BLOCKSIZE]))
         valuePtr += BLOCKSIZE
         bytesToWrite -= BLOCKSIZE
         fileINode.filePointer += BLOCKSIZE

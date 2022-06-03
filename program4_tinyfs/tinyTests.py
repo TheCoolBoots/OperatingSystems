@@ -1,3 +1,4 @@
+from typing import Dict
 import unittest
 import tinyFS as tfs
 import libDisk as dsk
@@ -36,8 +37,17 @@ class test_scheduler(unittest.TestCase):
         self.assertEqual(int(nodeActual.freeBlocks, 2), int('000' + ('1' * 1933), 2))
     
 
-    def test_aaa_initTestDisk(self):
-        
+    def initTestDisk(self):
+        tfs.fileDescriptor = int
+        tfs.dynamicResourceTable = {}
+        tfs.FDCounter = 0
+
+        tfs.cmd = None
+        tfs.cmdid = None
+
+        dsk.nextDiskID = 0
+        dsk.openFiles = {}
+
         returnCode = tfs.tfs_mkfs('program4_tinyfs/TestFiles/mkfsTest1.tfs', BLOCKSIZE * 5)
         # superblock + root inode + 3 data nodes
 
@@ -49,7 +59,7 @@ class test_scheduler(unittest.TestCase):
         rootDirINode.dataBlockPtrs[0] = 2
         rootDirINode.filesize = 16
 
-        dataBlockBytes = '_______file1'.encode('utf-8') + int(3).to_bytes(4, 'little') + bytes(256-16)
+        dataBlockBytes = '_______file0'.encode('utf-8') + int(3).to_bytes(4, 'little') + bytes(256-16)
         rootDirDataBlock = dataNode(dataBlockBytes)
 
         file0INode = inode(512, 0)
@@ -75,7 +85,9 @@ class test_scheduler(unittest.TestCase):
             f.write(fakeDisk.serialize())  
         
 
-    def test_mount_unmount(self):
+    def test_mount_unmount_close(self):
+        self.initTestDisk()
+
         retCode = tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest1.tfs')
         self.assertEqual(retCode, SuccessCodes.SUCCESS)
         self.assertEqual(tfs.cmd, superblock(BLOCKSIZE * 5))
@@ -87,9 +99,26 @@ class test_scheduler(unittest.TestCase):
         retCode = tfs.tfs_unmount()
 
 
+    def test_seek_readByte(self):
+        self.initTestDisk()
+
+        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest2.tfs')
+        tfs.tfs_open('file0')
+        tfs.tfs_seek(0, 8)
+        b = buffer()
+        tfs.tfs_readByte(0, b)
+        self.assertEqual(b.contents, 8)
+        seekRetCode = tfs.tfs_seek(0, 512)
+        self.assertEqual(seekRetCode, ErrorCodes.ATENDOFFILE)
+        tfs.tfs_unmount()
+
+
     def test_tfs_open(self):
-        returnCode = tfs.tfs_open("file0")
-        self.assertEqual(returnCode, SuccessCodes.SUCCESS)
+        self.initTestDisk()
+
+        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest2.tfs')
+        fileNum = tfs.tfs_open("file0")
+        self.assertEqual(fileNum, 0)
 
         blockId = 3
         expectedINode = inode(512, 0)
@@ -99,71 +128,61 @@ class test_scheduler(unittest.TestCase):
         tmp = dynamicResourceTableEntry(blockId, expectedINode)
         self.assertEqual(tfs.dynamicResourceTable[0], tmp)
         self.assertEqual(tfs.FDCounter, 1)
+        tfs.tfs_unmount()
 
-    def test_tfs_close_no_write(self):
-        openCode = tfs.tfs_open("file0")
-        closeCode = tfs.tfs_close(0)
-        self.assertEqual(closeCode, SuccessCodes.SUCCESS)
-
-        expectedfile0Data1 = list(range(0, 256))
-        expectedfile0Data2 = list(range(256, 0))
-
-        self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
-        self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
-        self.assertEqual(len(dynamicResourceTableEntry.keys), 0)
 
     def test_tfs_write1(self):
-        openCode = tfs.tfs_open("file0")
-        writeData = [0] * 512
-        tfs.tfs_write(0, writeData, 512)
-        
-        expectedfile0Data1 = [0] * 256
-        expectedfile0Data2 = [0] * 256
+        self.initTestDisk()
 
-        self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
-        self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
+        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest2.tfs')
+        fileNum = tfs.tfs_open("file0")
+        writeData = buffer(bytes([0] * 512))
+        tfs.tfs_write(fileNum, writeData, 16)
+        
+        b = buffer(256)
+        dsk.readBlock(0, 4, b)
+
+        expectedfile0Data1 = bytes([0] * 16 + list(range(16, 256)))
+        self.assertEqual(expectedfile0Data1, b.contents)
+        tfs.tfs_unmount()
     
+
     def test_tfs_write2(self):
-        openCode = tfs.tfs_open("file0")
-        writeData = [0] * 512
-        tfs.tfs_write(0, writeData, 500)
+        self.initTestDisk()
+
+        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest2.tfs')
+        fileNum = tfs.tfs_open("file0")
+        writeData = buffer(bytes([0] * 512))
+        tfs.tfs_write(fileNum, writeData, 512)
         
-        expectedfile0Data1 = [0] * 256
-        zerosList = [0] * 500 
-        numbersList = bytes(list(range(501, 512)))
-        expectedfile0Data2 = zerosList + numbersList
+        b = buffer(256)
+        dsk.readBlock(0, 4, b)
+        expectedfile0Data1 = bytes([0] * 256)
+        self.assertEqual(expectedfile0Data1, b.contents)
 
-        self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
-        self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
+        dsk.readBlock(0, 5, b)
+        expectedfile0Data2 = bytes([0] * 256)
+        self.assertEqual(expectedfile0Data2, b.contents)
+        tfs.tfs_unmount()
 
-
-    def test_tfs_close_withWrite(self):
-        openCode = tfs.tfs_open("file0")
-        writeData = [0] * 512
-        tfs.tfs_write(0, writeData, 500)
+    # def test_tfs_close_withWrite(self):
+    #     openCode = tfs.tfs_open("file0")
+    #     writeData = [0] * 512
+    #     tfs.tfs_write(0, writeData, 500)
         
-        expectedfile0Data1 = [0] * 256
-        zerosList = [0] * 500 
-        numbersList = bytes(list(range(501, 512)))
-        expectedfile0Data2 = zerosList + numbersList
+    #     expectedfile0Data1 = [0] * 256
+    #     zerosList = [0] * 500 
+    #     numbersList = bytes(list(range(501, 512)))
+    #     expectedfile0Data2 = zerosList + numbersList
 
-        self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
-        self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
+    #     self.assertEqual(expectedfile0Data1, self.referenceDisk.blocks[4])
+    #     self.assertEqual(expectedfile0Data2, self.referenceDisk.blocks[5])
     
     
     
     
    
-    def test_seek_readByte(self):
-        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest2.tfs')
-        tfs.tfs_open('_______file1')
-        tfs.tfs_seek(0, 8)
-        b = buffer()
-        tfs.tfs_readByte(0, b)
-        self.assertEqual(b.contents, 8)
-        seekRetCode = tfs.tfs_seek(0, 512)
-        self.assertEqual(seekRetCode, ErrorCodes.ATENDOFFILE)
-        tfs.tfs_unmount()
+
 
         
 
