@@ -4,7 +4,6 @@ from typing import Dict
 
 
 openFiles:Dict[int, FileIO] = {}
-nextDiskID = 0
 
 def openDisk(diskFile:str, nBytes:int = 0) -> int:
     if nBytes % BLOCKSIZE != 0:
@@ -21,20 +20,26 @@ def openDisk(diskFile:str, nBytes:int = 0) -> int:
     except FileNotFoundError:
         return ErrorCodes.DISKNOTFOUND
 
-def readBlock(diskID:int, bNum:int, blockBuffer:buffer):
+def readBlock(diskID:int, bNum:int, blockBuffer:buffer, decryptionKey = None):
     if diskID in openFiles:
-        try:
+        # try:
             # this might allow us to not require to read the whole 
             # file every time we want to read/write
             openFiles[diskID].seek(bNum * BLOCKSIZE)
-            blockBuffer.contents = openFiles[diskID].read(BLOCKSIZE)
+
+            if decryptionKey == None:
+                blockBuffer.contents = openFiles[diskID].read(BLOCKSIZE)
+            else:
+                rawData = openFiles[diskID].read(BLOCKSIZE)
+                decryptedData = decryptAES(rawData, decryptionKey)
+                blockBuffer.contents = decryptedData
             return SuccessCodes.SUCCESS
-        except:
-            return ErrorCodes.INVALIDBLOCKNUM
+        # except:
+        #     return ErrorCodes.INVALIDBLOCKNUM
     else:
         return ErrorCodes.DISKID
 
-def writeBlock(diskID:int, bNum:int, blockBuffer:buffer):
+def writeBlock(diskID:int, bNum:int, blockBuffer:buffer, encryptionKey = None):
     if diskID in openFiles:
         # fileContents = openFiles[diskID].read()
         # try:
@@ -44,7 +49,11 @@ def writeBlock(diskID:int, bNum:int, blockBuffer:buffer):
             # this might allow us to not require to read the whole 
             # file every time we want to read/write
             openFiles[diskID].seek(bNum * BLOCKSIZE)
-            bytesWritten = openFiles[diskID].write(blockBuffer.contents)
+            if encryptionKey == None:
+                bytesWritten = openFiles[diskID].write(blockBuffer.contents)
+            else:
+                bytesWritten = openFiles[diskID].write(encryptAES(blockBuffer.contents, encryptionKey))
+
             if bytesWritten == BLOCKSIZE:
                 return SuccessCodes.SUCCESS
             else:

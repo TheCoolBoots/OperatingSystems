@@ -1,5 +1,6 @@
 from enum import Enum
 from math import ceil
+from encrypt import *
 
 class buffer():
     def __init__(self, contents:bytes = bytes(256)):
@@ -34,17 +35,16 @@ class disk():   # using the log file system
         self.blocks[1] = inode(0, 1)               # inode of root directory
         self.blocks[2] = dataNode(bytes(256))   # data of root directory
 
-    def serialize(self) -> bytes:
+    def serialize(self, encryptionKey = None) -> bytes:
         output = bytes()
         for block in self.blocks:
-            b = block.toBytes()
-            output += b
+            output += block.toBytes(encryptionKey)
 
         return output
 
 
 class block():
-    def toBytes(self) -> bytes:
+    def toBytes(self, encryptionKey = None) -> bytes:
         pass
 
 
@@ -60,12 +60,15 @@ class superblock(block):
         # 256 - 12 - 2 bytes free for free block tracking
         # = 242 bytes = 1936 bits
 
-    def toBytes(self) -> bytes:
+    def toBytes(self, encryptionKey = None) -> bytes:
         output = self.magicNumber.to_bytes(2, 'little')
         output += self.nextFreeBlockIndex.to_bytes(4, 'little')
         output += self.rootDirINode.to_bytes(4, 'little')
         output += self.diskSize.to_bytes(4, 'little')
         output += int(self.freeBlocks, 2).to_bytes(len(self.freeBlocks)//8,'big')
+
+        if encryptionKey != None:
+            output = encryptAES(output, encryptionKey)
         return output
 
     def getNextFreeBlockIndex(self):
@@ -93,6 +96,7 @@ class superblock(block):
     def __eq__(self, other):
         if type(other) != superblock:
             return False
+        print(len(self.freeBlocks), len(other.freeBlocks))
         return self.magicNumber == other.magicNumber and self.nextFreeBlockIndex == other.nextFreeBlockIndex and self.diskSize == other.diskSize and self.freeBlocks == other.freeBlocks
             
 
@@ -103,7 +107,9 @@ def bytesToSuperblock(block:bytes):
         superblk.nextFreeBlockIndex = int.from_bytes(block[2:6], 'little')
         superblk.rootDirINode = int.from_bytes(block[6:10], 'little')
         superblk.diskSize = int.from_bytes(block[10:14], 'little')
+        print(len(block))
         superblk.freeBlocks = format(int.from_bytes(block[14:], 'big'), 'b')
+        print(len(superblk.freeBlocks))
         superblk.freeBlocks = '0'*(1936 - len(superblk.freeBlocks)) + superblk.freeBlocks
         return superblk
 
@@ -122,7 +128,7 @@ class inode(block):
         # max file size = 59 * 256 bytes = 15104 bytes or 15KB
         self.dataBlockPtrs = [0] * 59 
 
-    def toBytes(self) -> bytes:
+    def toBytes(self, encryptionKey = None) -> bytes:
         output = self.filesize.to_bytes(4, 'little')
         output += self.filetype.to_bytes(2, 'little')
         output += self.permissions.to_bytes(2, 'little')
@@ -132,6 +138,9 @@ class inode(block):
         for ptr in self.dataBlockPtrs:
             output += ptr.to_bytes(4, 'little')
         
+        if encryptionKey != None:
+            output = encryptAES(output, encryptionKey)
+
         return output
 
     def __eq__(self, other):
@@ -171,14 +180,19 @@ class dataNode(block):
     inode # for given name  
     """
 
-    def toBytes(self) -> bytes:
+    def toBytes(self, encryptionKey = None) -> bytes:
+
+        if encryptionKey != None:
+            return encryptAES(self.content, encryptionKey)
         return self.content
 
 
 class freeNode(block):
     def __init__(self):
         self.content = bytes([0] * BLOCKSIZE)
-    def toBytes(self) -> bytes:
+    def toBytes(self, encryptionKey = None) -> bytes:
+        if encryptionKey != None:
+            return encryptAES(self.content, encryptionKey)
         return self.content
 
 
