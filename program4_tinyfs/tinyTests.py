@@ -314,14 +314,14 @@ class test_scheduler(unittest.TestCase):
     #     tfs.tfs_unmount()
 
 
-    # def test_readdir(self):
-    #     self.initTestDisk2()
+    def test_readdir(self):
+        self.initTestDisk2()
 
-    #     tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest3.tfs')
-    #     actual = tfs.tfs_readdir()
-    #     expected = ['file0', 'file1']
-    #     self.assertEqual(actual, expected)
-    #     tfs.tfs_unmount()
+        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest3.tfs')
+        actual = tfs.tfs_readdir()
+        expected = ['file0', 'file1']
+        self.assertEqual(actual, expected)
+        tfs.tfs_unmount()
 
     
     def test_encryption(self):
