@@ -175,7 +175,7 @@ class dataNode(block):
 
 class freeNode(block):
     def __init__(self):
-        self.content = bytes(256)
+        self.content = bytes([0] * BLOCKSIZE)
     def toBytes(self) -> bytes:
         return self.content
 

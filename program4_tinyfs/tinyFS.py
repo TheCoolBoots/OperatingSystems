@@ -119,6 +119,7 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
             i += 1
         for j in range(0, blocksNeeded - blocksAllocated):
             fileINode.dataBlockPtrs[i+j] = cmd.getNextFreeBlockIndex()
+            # TODO make sure the inode is getting updated in the DRT
 
 
     # freeBytes in current block = 256 - (fileINode.filePointer % 256)
@@ -134,11 +135,9 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
     dsk.readBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], b)
 
     # if we will fill the block that the file pointer is in
-    if overwriteInBlock == BLOCKSIZE:
-        pass
-    elif overwriteInBlock < bytesToWrite:
+    if overwriteInBlock < bytesToWrite:
         # build the contents of the new block
-        newContents = b.contents[0:overwriteInBlock] + writeBuffer.contents[valuePtr:valuePtr+overwriteInBlock]
+        newContents = b.contents[0:fileINode.filePointer % BLOCKSIZE] + writeBuffer.contents[valuePtr:valuePtr+overwriteInBlock]
         
         # write the new contents to the disk
         dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
@@ -172,7 +171,7 @@ def tfs_write(FD:fileDescriptor, writeBuffer:buffer, size:int):
     if bytesToWrite > 0:
         # write the remaining bytes in values to the next data block
         dsk.readBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], b)
-        newContents = writeBuffer.contents[:valuePtr] + b.contents[bytesToWrite:]
+        newContents = writeBuffer.contents[valuePtr:] + b.contents[bytesToWrite:]
         dsk.writeBlock(cmdid, fileINode.dataBlockPtrs[dataBlockIndex], buffer(newContents))
 
     if fileINode.filePointer > fileINode.filesize:

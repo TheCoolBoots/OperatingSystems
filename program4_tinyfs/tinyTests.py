@@ -51,7 +51,7 @@ class test_scheduler(unittest.TestCase):
         returnCode = tfs.tfs_mkfs('program4_tinyfs/TestFiles/mkfsTest1.tfs', BLOCKSIZE * 5)
         # superblock + root inode + 3 data nodes
 
-        superblk = superblock(1792)
+        superblk = superblock(2048)
         superblk.nextFreeBlockIndex = 6
         superblk.freeBlocks = '000000' + '1'*1930
 
@@ -71,7 +71,7 @@ class test_scheduler(unittest.TestCase):
         file0DataNode1 = dataNode(file0Data1)
         file0DataNode2 = dataNode(file0Data2)
 
-        fakeDisk = disk(1792)
+        fakeDisk = disk(2048)
         fakeDisk.blocks[0] = superblk
         fakeDisk.blocks[1] = rootDirINode
         fakeDisk.blocks[2] = rootDirDataBlock
@@ -248,6 +248,34 @@ class test_scheduler(unittest.TestCase):
         self.assertEqual(expectedfile0Data2, b.contents)
         tfs.tfs_unmount()
 
+    
+    def test_tfs_write3(self):
+        self.initTestDisk()
+
+        tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest2.tfs')
+        fileNum = tfs.tfs_open("file0")
+        writeData = buffer(bytes([0] * 512 + list(range(0,10))))
+        tfs.tfs_write(fileNum, writeData, 522)
+        
+        b = buffer(256)
+        dsk.readBlock(0, 4, b)
+        expectedfile0Data1 = bytes([0] * 256)
+        self.assertEqual(expectedfile0Data1, b.contents)
+
+        dsk.readBlock(0, 5, b)
+        expectedfile0Data2 = bytes([0] * 256)
+        self.assertEqual(expectedfile0Data2, b.contents)
+
+        dsk.readBlock(0, 6, b)
+        expectedfile0Data3 = bytes(list(range(0, 10))) + bytes(246)
+        self.assertEqual(expectedfile0Data3, b.contents)
+
+        blk = superblock(2048)
+        blk.nextFreeBlockIndex = 7
+        blk.freeBlocks = '0000000' + '1'*1929
+        self.assertEqual(blk, tfs.cmd)
+
+        tfs.tfs_unmount()
 
     # def test_tfs_close_withWrite(self):
     #     openCode = tfs.tfs_open("file0")
