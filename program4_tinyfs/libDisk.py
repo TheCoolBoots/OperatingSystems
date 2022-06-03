@@ -22,32 +22,21 @@ def openDisk(diskFile:str, nBytes:int = 0) -> int:
 
 def readBlock(diskID:int, bNum:int, blockBuffer:buffer, decryptionKey = None):
     if diskID in openFiles:
-        # try:
-            # this might allow us to not require to read the whole 
-            # file every time we want to read/write
-            openFiles[diskID].seek(bNum * BLOCKSIZE)
+        openFiles[diskID].seek(bNum * BLOCKSIZE)
 
-            if decryptionKey == None:
-                blockBuffer.contents = openFiles[diskID].read(BLOCKSIZE)
-            else:
-                rawData = openFiles[diskID].read(BLOCKSIZE)
-                decryptedData = decryptAES(rawData, decryptionKey)
-                blockBuffer.contents = decryptedData
-            return SuccessCodes.SUCCESS
-        # except:
-        #     return ErrorCodes.INVALIDBLOCKNUM
+        if decryptionKey == None:
+            blockBuffer.contents = openFiles[diskID].read(BLOCKSIZE)
+        else:
+            rawData = openFiles[diskID].read(BLOCKSIZE)
+            decryptedData = decryptAES(rawData, decryptionKey)
+            blockBuffer.contents = decryptedData
+        return SuccessCodes.SUCCESS
     else:
         return ErrorCodes.DISKID
 
 def writeBlock(diskID:int, bNum:int, blockBuffer:buffer, encryptionKey = None):
     if diskID in openFiles:
-        # fileContents = openFiles[diskID].read()
-        # try:
-        #     fileContents[BLOCKSIZE*bNum : BLOCKSIZE*(bNum + 1)] = blockBuffer.contents
-        #     openFiles[diskID].write(fileContents)
         try:
-            # this might allow us to not require to read the whole 
-            # file every time we want to read/write
             openFiles[diskID].seek(bNum * BLOCKSIZE)
             if encryptionKey == None:
                 bytesWritten = openFiles[diskID].write(blockBuffer.contents)
