@@ -5,7 +5,6 @@ from hashlib import md5
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from Crypto.Util.Padding import pad, unpad
 
 
 def encryptAES(data, key):

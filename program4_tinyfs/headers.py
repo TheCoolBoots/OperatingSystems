@@ -49,22 +49,24 @@ class block():
 
 
 class superblock(block):
-    def __init__(self, diskSize:int):
+    def __init__(self, diskSize:int, IVNode = 0):
         self.magicNumber = 0x5A         # 2 bytes; 16 bits
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
+        self.IVNode = IVNode            # 4 bytes
         # TODO change to array of 1's and 0's to be more efficient
         self.freeBlocks = '000'+('1'*1933) # 0 is not free, 1 is free 
 
-        # 256 - 12 - 2 bytes free for free block tracking
-        # = 242 bytes = 1936 bits
+        # 256 - 12 - 2 - 1 bytes free for free block tracking
+        # = 242 bytes = 1928 bits
 
     def toBytes(self, encryptionKey = None) -> bytes:
         output = self.magicNumber.to_bytes(2, 'little')
         output += self.nextFreeBlockIndex.to_bytes(4, 'little')
         output += self.rootDirINode.to_bytes(4, 'little')
         output += self.diskSize.to_bytes(4, 'little')
+        output += self.IVNode.to_bytes(4, 'little')
         output += int(self.freeBlocks, 2).to_bytes(len(self.freeBlocks)//8,'big')
 
         if encryptionKey != None:
@@ -107,10 +109,9 @@ def bytesToSuperblock(block:bytes):
         superblk.nextFreeBlockIndex = int.from_bytes(block[2:6], 'little')
         superblk.rootDirINode = int.from_bytes(block[6:10], 'little')
         superblk.diskSize = int.from_bytes(block[10:14], 'little')
-        print(len(block))
+        superblk.IVNode = int.from_bytes(block[14:18], 'little')
         superblk.freeBlocks = format(int.from_bytes(block[14:], 'big'), 'b')
-        print(len(superblk.freeBlocks))
-        superblk.freeBlocks = '0'*(1936 - len(superblk.freeBlocks)) + superblk.freeBlocks
+        superblk.freeBlocks = '0'*(1928 - len(superblk.freeBlocks)) + superblk.freeBlocks
         return superblk
 
 

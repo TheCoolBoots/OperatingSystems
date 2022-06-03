@@ -47,7 +47,7 @@ def tfs_mount(diskName:str, rawKey = None) -> int:
             superblkBuffer = buffer()
 
             # read the superblock of the opened disk
-            dsk.readBlock(cmdid, 0, superblkBuffer, hashedKey)
+            dsk.readBlock(cmdid, 0, superblkBuffer)
 
             # convert the raw bytes into a superblock class
             cmd = bytesToSuperblock(superblkBuffer.contents)
@@ -72,7 +72,7 @@ def tfs_unmount() -> int:
         tfs_close(i)
 
     # write the superblock of the current FS to disk
-    dsk.writeBlock(cmdid, 0, buffer(cmd.toBytes()), hashedKey)
+    dsk.writeBlock(cmdid, 0, buffer(cmd.toBytes()))
     
     cmd = None
     hashedKey = None
