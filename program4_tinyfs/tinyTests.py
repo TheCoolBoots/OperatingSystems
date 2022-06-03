@@ -33,8 +33,8 @@ class test_scheduler(unittest.TestCase):
         self.assertEqual(nodeActual.nextFreeBlockIndex, 3)
         self.assertEqual(nodeActual.rootDirINode, 1)
         self.assertEqual(nodeActual.diskSize, 1991)
-        self.assertEqual(len(nodeActual.freeBlocks), 1936)
-        self.assertEqual(int(nodeActual.freeBlocks, 2), int('000' + ('1' * 1933), 2))
+        self.assertEqual(len(nodeActual.freeBlocks), 8*222)
+        self.assertEqual(int(nodeActual.freeBlocks, 2), int('000' + ('1' * (8*222 - 3)), 2))
     
 
     def initTestDisk(self):
@@ -53,7 +53,7 @@ class test_scheduler(unittest.TestCase):
 
         superblk = superblock(2048)
         superblk.nextFreeBlockIndex = 6
-        superblk.freeBlocks = '000000' + '1'*1930
+        superblk.freeBlocks = '000000' + '1'*(8*222 - 6)
 
         rootDirINode = inode(0, 1, 0)   # owner = root, perms = 0xffff
         rootDirINode.dataBlockPtrs[0] = 2
@@ -99,7 +99,7 @@ class test_scheduler(unittest.TestCase):
         
         superblk = superblock(BLOCKSIZE * 10)
         superblk.nextFreeBlockIndex = 9
-        superblk.freeBlocks = '000000000' + '1'*(1927)
+        superblk.freeBlocks = '000000000' + '1'*(8*222 - 9)
 
         rootDirINode = inode(32, 1, 0)   # owner = root, perms = 0xffff
         rootDirINode.dataBlockPtrs[0] = 2
@@ -144,59 +144,59 @@ class test_scheduler(unittest.TestCase):
             # self.assertEqual(fakeDisk2.serialize(), f.read())
         
 
-    def initEncryptedDisk(self, encryptionKey):
-        tfs.fileDescriptor = int
-        tfs.dynamicResourceTable = {}
-        tfs.FDCounter = 0
+    # def initEncryptedDisk(self, encryptionKey):
+    #     tfs.fileDescriptor = int
+    #     tfs.dynamicResourceTable = {}
+    #     tfs.FDCounter = 0
 
-        tfs.cmd = None
-        tfs.cmdid = None
+    #     tfs.cmd = None
+    #     tfs.cmdid = None
 
-        dsk.nextDiskID = 0
-        dsk.openFiles = {}
+    #     dsk.nextDiskID = 0
+    #     dsk.openFiles = {}
 
-        superblk = superblock(BLOCKSIZE * 8)
-        superblk.nextFreeBlockIndex = 7
-        superblk.freeBlocks = '0000000' + '1'*(1928 - 7)
+    #     superblk = superblock(BLOCKSIZE * 8)
+    #     superblk.nextFreeBlockIndex = 7
+    #     superblk.freeBlocks = '0000000' + '1'*(1928 - 7)
 
-        ivNodeContents = b'04cl}\xad\x02\x83\x03%A\x12vEC\xd9'
-        b'\x00\xb6\xb9\xbe\xd0\xbe\xbb\xdc4\x13+\x8f/\x8dI\t'
-        b'\xf8\xc2f\x1e"\xd2\xfd\xfe\t\xfaqm\xa0\x16\xc7t'
-        b'\xae\x14\x9e\x9e\xcb\xb5\xba\xfbA0\xacx2\xda&\xb1'
-        b'\xcc\x9b\xa6g\xc1[\x1cc\xb6\xaes\x91\x0c\x163='
-        b'\xea)\ta\x8f\xb6\xceq\xe8\x1e\x0c\x10\xe9I\xb86'
-        b'W\x04\x15\x82Lun\xfc~\xcaf\x1dP<\x80\xd4'
-        b"\xde0\x1d0'\x7f\x13\x86h\r\x9a(\x1b\x9a#\x82"
-        ivNode = dataNode()
+    #     # ivNodeContents = b'04cl}\xad\x02\x83\x03%A\x12vEC\xd9'
+    #     # b'\x00\xb6\xb9\xbe\xd0\xbe\xbb\xdc4\x13+\x8f/\x8dI\t'
+    #     # b'\xf8\xc2f\x1e"\xd2\xfd\xfe\t\xfaqm\xa0\x16\xc7t'
+    #     # b'\xae\x14\x9e\x9e\xcb\xb5\xba\xfbA0\xacx2\xda&\xb1'
+    #     # b'\xcc\x9b\xa6g\xc1[\x1cc\xb6\xaes\x91\x0c\x163='
+    #     # b'\xea)\ta\x8f\xb6\xceq\xe8\x1e\x0c\x10\xe9I\xb86'
+    #     # b'W\x04\x15\x82Lun\xfc~\xcaf\x1dP<\x80\xd4'
+    #     # b"\xde0\x1d0'\x7f\x13\x86h\r\x9a(\x1b\x9a#\x82"
+    #     ivNode = dataNode()
 
-        rootDirINode = inode(0, 1, 0)   # owner = root, perms = 0xffff
-        rootDirINode.dataBlockPtrs[0] = 2
-        rootDirINode.filesize = 16
+    #     rootDirINode = inode(0, 1, 0)   # owner = root, perms = 0xffff
+    #     rootDirINode.dataBlockPtrs[0] = 2
+    #     rootDirINode.filesize = 16
 
-        dataBlockBytes = '_______file0'.encode('utf-8') + int(3).to_bytes(4, 'little') + bytes(256-16)
-        rootDirDataBlock = dataNode(dataBlockBytes)
+    #     dataBlockBytes = '_______file0'.encode('utf-8') + int(3).to_bytes(4, 'little') + bytes(256-16)
+    #     rootDirDataBlock = dataNode(dataBlockBytes)
 
-        file0INode = inode(512, 0)
-        file0INode.dataBlockPtrs[0] = 4
-        file0INode.dataBlockPtrs[1] = 5
+    #     file0INode = inode(512, 0)
+    #     file0INode.dataBlockPtrs[0] = 4
+    #     file0INode.dataBlockPtrs[1] = 5
 
-        file0Data1 = bytes(list(range(0, 256)))
-        file0Data2 = bytes(list(range(256, 0)))
-        file0DataNode1 = dataNode(file0Data1)
-        file0DataNode2 = dataNode(file0Data2)
+    #     file0Data1 = bytes(list(range(0, 256)))
+    #     file0Data2 = bytes(list(range(256, 0)))
+    #     file0DataNode1 = dataNode(file0Data1)
+    #     file0DataNode2 = dataNode(file0Data2)
 
-        fakeDisk = disk(2048)
-        fakeDisk.blocks[0] = superblk
-        fakeDisk.blocks[1] = rootDirINode
-        fakeDisk.blocks[2] = rootDirDataBlock
-        fakeDisk.blocks[3] = file0INode
-        fakeDisk.blocks[4] = file0DataNode1
-        fakeDisk.blocks[5] = file0DataNode2
+    #     fakeDisk = disk(2048)
+    #     fakeDisk.blocks[0] = superblk
+    #     fakeDisk.blocks[1] = rootDirINode
+    #     fakeDisk.blocks[2] = rootDirDataBlock
+    #     fakeDisk.blocks[3] = file0INode
+    #     fakeDisk.blocks[4] = file0DataNode1
+    #     fakeDisk.blocks[5] = file0DataNode2
 
-        self.referenceDisk = fakeDisk
+    #     self.referenceDisk = fakeDisk
 
-        with open('program4_tinyfs/TestFiles/mkfsTest2.tfs', 'wb+') as f:
-            f.write(fakeDisk.serialize())  
+    #     with open('program4_tinyfs/TestFiles/mkfsTest2.tfs', 'wb+') as f:
+    #         f.write(fakeDisk.serialize())  
 
 
     def test_mount_unmount_close(self):
@@ -328,7 +328,7 @@ class test_scheduler(unittest.TestCase):
 
         blk = superblock(2048)
         blk.nextFreeBlockIndex = 7
-        blk.freeBlocks = '0000000' + '1'*1929
+        blk.freeBlocks = '0000000' + '1'*(8*222 - 7)
         self.assertEqual(blk, tfs.cmd)
 
         tfs.tfs_unmount()
