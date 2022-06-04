@@ -2,8 +2,9 @@ import tinyFS as tfs
 import libDisk as dsk
 
 from headers import *
+
 class Demo():
-    def initTestDisk2Files(self, encryptionKey = None):
+     def initTestDisk2(self):
         tfs.fileDescriptor = int
         tfs.dynamicResourceTable = {}
         tfs.FDCounter = 0
@@ -16,7 +17,7 @@ class Demo():
         
         superblk = superblock(BLOCKSIZE * 10)
         superblk.nextFreeBlockIndex = 9
-        superblk.freeBlocks = '000000000' + '1'*1927
+        superblk.freeBlocks = '000000000' + '1'*(8*222 - 9)
 
         rootDirINode = inode(32, 1, 0)   # owner = root, perms = 0xffff
         rootDirINode.dataBlockPtrs[0] = 2
@@ -29,22 +30,23 @@ class Demo():
         file0INode.dataBlockPtrs[0] = 4
         file0INode.dataBlockPtrs[1] = 5
 
-
-        file0Data1List = [0] * 50 + [1] * 50 + [2] * 50 + [3] * 50 + [4] * 50 + [5] * 6
-        file0Data2List = [6] * 50 + [7] * 50 + [8] * 50 + [9] * 50 + [10] * 50 + [11] * 6
-        file0Data1 = bytes(file0Data1List)
-        file0Data2 = bytes(file0Data2List)
+        f0d1 = [0] * 50 + [1] * 50 + [2] * 50 + [3] * 50 + [4] * 50 + [5] * 6
+        f0d2 = [6] * 50 + [7] * 50 + [8] * 50 + [9] * 50 + [10] * 50 + [11] * 6
+        file0Data1 = bytes(f0d1)
+        file0Data2 = bytes(f0d2)
         file0DataNode1 = dataNode(file0Data1)
         file0DataNode2 = dataNode(file0Data2)
 
         file1INode = inode(512, 0)
         file1INode.dataBlockPtrs[0] = 7
         file1INode.dataBlockPtrs[1] = 8
-
-        file1Data1List = [1] * 50 + [2] * 50 + [3] * 50 + [4] * 50 + [5] * 50 + [6] * 6
-        file1Data2List = [7] * 50 + [8] * 50 + [9] * 50 + [10] * 50 + [11] * 50 + [12] * 6
-        file1DataNode1 = dataNode(file1Data1List)
-        file1DataNode2 = dataNode(file1Data2List)
+        
+        f1d1 = [1] * 50 + [2] * 50 + [3] * 50 + [4] * 50 + [5] * 50 + [6] * 6
+        f1d2 = [7] * 50 + [8] * 50 + [9] * 50 + [10] * 50 + [11] * 50 + [12] * 6
+        file1Data1 = bytes(f1d1)
+        file1Data2 = bytes(f1d2)
+        file1DataNode1 = dataNode(file1Data1)
+        file1DataNode2 = dataNode(file1Data2)
 
         fakeDisk2 = disk(BLOCKSIZE * 10)
         fakeDisk2.blocks[0] = superblk
@@ -59,68 +61,89 @@ class Demo():
 
         self.referenceDisk2 = fakeDisk2
 
-        with open('program4_tinyfs/TestFiles/tinyFSDemoFile.tfs', 'wb+') as f:
+        with open('program4_tinyfs/TestFiles/DEMOWORK.tfs', 'wb+') as f:
             f.write(fakeDisk2.serialize())
 
 if __name__ == '__main__':
-        d = Demo()
-        d.initTestDisk2Files()
-        #mount test, sets the cmd (current mounted disk)
-        tfs.tfs_mount("program4_tinyfs/TestFiles/tinyFSDemoFile.tfs")
 
-        print(tfs.cmd.nextFreeBlockIndex)
-        print(tfs.cmd.freeBlocks)
+    d = Demo()
+    d.initTestDisk2()
 
-        #open file 0
-        fileNum = tfs.tfs_open("file0")
-        print(fileNum)
-        print(tfs.dynamicResourceTable[0].inodeBlockNum)
-        print(tfs.dynamicResourceTable[0].memINode)
-        print(tfs.dynamicResourceTable[0].memINode.dataBlockPtrs[0])
+    #mount test, sets the cmd ()
+    tfs.tfs_mount("program4_tinyfs/TestFiles/DEMOWORK.tfs")
 
-        #open file 1
-        fileNum1 = tfs.tfs_open("file1")
-        print("File Num1 = " + fileNum1)
-        print(tfs.dynamicResourceTable[1].inodeBlockNum)
-        print(tfs.dynamicResourceTable[1].memINode)
-        print(tfs.dynamicResourceTable[1].memINode.dataBlockPtrs[0])
+    print("NEXT FREE BLOCK")
+    print(tfs.cmd.nextFreeBlockIndex)
+    print("FREE BLOCKS")
+    print(tfs.cmd.freeBlocks)
 
-        #do whatchu need to do, example : maybe u need to xor the file contents
+    #open file 0
+    fileNum = tfs.tfs_open("file0")
+    print("FILE0 FILE DESCRIPTOR")
+    print(fileNum)
+    print("INODE BLOCK NUM")
+    print(tfs.dynamicResourceTable[0].inodeBlockNum)
+    print("INODE")
+    print(tfs.dynamicResourceTable[0].memINode)
+    print("DATA BLOCK PTRS")
+    print(tfs.dynamicResourceTable[0].memINode.dataBlockPtrs[0])
+    print(tfs.dynamicResourceTable[0].memINode.dataBlockPtrs[1])
 
-        #write 32 0 to file0
-        writeData = buffer(bytes([0] * 512))
-        tfs.tfs_write(fileNum, writeData, 32)
+    #open file 1
+    fileNum1 = tfs.tfs_open("file1")
+    print("FILE1 FILE DESCRIPTOR")
+    print(fileNum1)
+    print("INODE BLOCK NUM")
+    print(tfs.dynamicResourceTable[1].inodeBlockNum)
+    print("INODE")
+    print(tfs.dynamicResourceTable[1].memINode)
+    print("DATA BLOCK PTRS")
+    print(tfs.dynamicResourceTable[1].memINode.dataBlockPtrs[0])
+    print(tfs.dynamicResourceTable[1].memINode.dataBlockPtrs[1])
 
-        b = buffer(256)
-        dsk.readBlock(0, 4, b)
-        print(b.contents)
+    #do whatchu need to do, example : maybe u need to xor the file contents
+    #before write
+    b = buffer(256)
+    dsk.readBlock(0, 4, b)
+    print("CONTENTS BEFORE BEING WRITTEN TO")
+    print(b.contents)
 
-        #read one byte and moving pointer 
-        tfs.tfs_seek(0, 32)
-        b = buffer()
-        tfs.tfs_readByte(0, b)
-        print(b.contents)
+    #write 100 0 to file0
+    writeData = buffer(bytes([0] * 512))
+    tfs.tfs_write(fileNum, writeData, 100)
 
-        #before deleting 
-        print(tfs.tfs_readdir())
+    print("CONTENTS AFTER BEING WRITTEN TO")
+    b = buffer(256)
+    dsk.readBlock(0, 4, b)
+    print(b.contents)
 
-        #delete file1
-        tfs.tfs_delete(fileNum1)
-        print(tfs.cmd.freeBlocks[5:6]) # 1 means free
+    #read one byte and moving pointer 
+    tfs.tfs_seek(0, 101)
+    b = buffer()
+    tfs.tfs_readByte(0, b)
+    print("READING ONE BYTE")
+    print(b.contents)
 
-        #renaming file
-        tfs.tfs_rename(fileNum, "rename")
-        b = buffer()
-        dsk.readBlock(0, 2, b)
-        print(b.contents)
+    #before deleting 
+    print("BEFORE DELETING")
+    print(tfs.tfs_readdir())
 
-        #readdir with one file and rename executed
-        print(tfs.tfs_readdir())
+    #delete file1
+    tfs.tfs_delete(fileNum1)
+    print("FREE BLOCK CONTENTS")
+    print(tfs.cmd.freeBlocks[0:16]) # 1 means free
 
-        #no cmd found
-        tfs.tfs_unmount()
-        print(tfs.cmd)
+    #renaming file
 
-        #encryption
+    tfs.tfs_rename(fileNum, "rename")
 
+    #readdir with one file and rename executed
+    print("AFTER DELETING AND RENAMING")
+    print(tfs.tfs_readdir())
 
+    #no cmd found
+    print("UNMOUNT")
+    tfs.tfs_unmount()
+    print(tfs.cmd)
+
+    #encryption

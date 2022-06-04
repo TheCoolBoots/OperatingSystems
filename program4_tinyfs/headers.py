@@ -24,16 +24,19 @@ BLOCKSIZE = 256
 
 
 class disk():   # using the log file system
-    def __init__(self, diskSizeBytes = 10240):
+    def __init__(self, diskSizeBytes = 10240, encryptionKey = None):
         if diskSizeBytes % BLOCKSIZE != 0:
             raise ValueError(f"diskSizeBytes must be divisible by BLOCKSIZE({BLOCKSIZE})")
         self.diskSizeBytes = diskSizeBytes
         self.maxNumBlocks = ceil(diskSizeBytes/BLOCKSIZE)
         self.blocks:list[block] = [freeNode()] * self.maxNumBlocks
 
-        self.blocks[0] = superblock(diskSizeBytes)
-        self.blocks[1] = inode(0, 1)               # inode of root directory
-        self.blocks[2] = dataNode(bytes(256))   # data of root directory
+        if encryptionKey == None:
+            self.blocks[0] = superblock(diskSizeBytes)
+            self.blocks[1] = inode(0, 1)               # inode of root directory
+            self.blocks[2] = dataNode(bytes(256))   # data of root directory
+        else:
+            pass
 
     def serialize(self, encryptionKey = None) -> bytes:
         output = bytes()
@@ -49,28 +52,33 @@ class block():
 
 
 class superblock(block):
-    def __init__(self, diskSize:int, IVNode = 0):
+    def __init__(self, diskSize:int, IVNode:int = None, IVNodeIV:bytes = None):
         self.magicNumber = 0x5A         # 2 bytes; 16 bits
         self.nextFreeBlockIndex = 3     # 4 bytes
         self.rootDirINode = 1           # 4 bytes
         self.diskSize = diskSize        # 4 bytes
         self.IVNode = IVNode            # 4 bytes
+        self.IVNodeIV = IVNodeIV        # 16 bytes
         # TODO change to array of 1's and 0's to be more efficient
-        self.freeBlocks = '000'+('1'*1933) # 0 is not free, 1 is free 
+        if IVNode == None:
+            self.freeBlocks = '000' + ('1' * (222 * 8 - 3)) # 0 is not free, 1 is free 
+        else:
+            self.freeBlocks = '0000' + ('1' * (222 * 8 - 4))
 
-        # 256 - 12 - 2 - 1 bytes free for free block tracking
-        # = 242 bytes = 1928 bits
+        # 256 - 34 bytes free for free block tracking
+        # = 222 bytes = 1776 bits
 
     def toBytes(self, encryptionKey = None) -> bytes:
         output = self.magicNumber.to_bytes(2, 'little')
         output += self.nextFreeBlockIndex.to_bytes(4, 'little')
         output += self.rootDirINode.to_bytes(4, 'little')
         output += self.diskSize.to_bytes(4, 'little')
-        output += self.IVNode.to_bytes(4, 'little')
+        if self.IVNode != None:
+            output += self.IVNode.to_bytes(4, 'little')
+            output += self.IVNodeIV
+        else:
+            output += bytes(20)
         output += int(self.freeBlocks, 2).to_bytes(len(self.freeBlocks)//8,'big')
-
-        if encryptionKey != None:
-            output = encryptAES(output, encryptionKey)
         return output
 
     def getNextFreeBlockIndex(self):
@@ -110,8 +118,12 @@ def bytesToSuperblock(block:bytes):
         superblk.rootDirINode = int.from_bytes(block[6:10], 'little')
         superblk.diskSize = int.from_bytes(block[10:14], 'little')
         superblk.IVNode = int.from_bytes(block[14:18], 'little')
-        superblk.freeBlocks = format(int.from_bytes(block[14:], 'big'), 'b')
-        superblk.freeBlocks = '0'*(1928 - len(superblk.freeBlocks)) + superblk.freeBlocks
+        superblk.IVNodeIV = block[18:34]
+        if superblk.IVNode == 0:
+            superblk.IVNode = None
+            superblk.IVNodeIV = None
+        superblk.freeBlocks = format(int.from_bytes(block[34:], 'big'), 'b')
+        superblk.freeBlocks = '0'*((222 * 8) - len(superblk.freeBlocks)) + superblk.freeBlocks
         return superblk
 
 
