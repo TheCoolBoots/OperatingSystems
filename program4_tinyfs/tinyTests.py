@@ -5,6 +5,7 @@ import libDisk as dsk
 from hashlib import md5
 
 from headers import *
+from encrypt import *
 
 
 class test_scheduler(unittest.TestCase):

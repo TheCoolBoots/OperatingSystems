@@ -1,0 +1,15 @@
+Andrew Lai and Jennifer Vazquez 
+
+All the functions work as intended from our design document (from what we can see)
+
+Additional Functionalities:
+Rename and readdir - we wrote test cases for rename and readdir (they passed WAHOOOO)
+Encyprtion - we created an encrpted disk, which is just NONSENSE, and we were able to read its content 
+and write to it through our encyprtion key (Encyprtion is not in the Demo, see video please)
+
+Limitations (NOT SAID IN VIDEO WE DID NOT HAVE TIME SO SORRY):
+Superblock bitmap is only 1776 bits long, therefore max number of files is 1776
+Each directory can only point to 236 * (256/16) files, this is the max directory size
+Filenames can't contain '_'
+Max number of encrypted files = 256/16 but can have encrypted and non-encrypted files on the same disk
+Password hash is stored in plaintext

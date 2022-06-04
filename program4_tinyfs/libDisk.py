@@ -1,6 +1,7 @@
 from io import FileIO
 from headers import *
 from typing import Dict
+from encrypt import *
 
 nextDiskID = 0
 openFiles:Dict[int, FileIO] = {}

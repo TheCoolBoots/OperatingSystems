@@ -3,6 +3,7 @@ import libDisk as dsk
 from typing import Dict
 from math import ceil
 from hashlib import md5
+from Crypto.Cipher import AES
 
 fileDescriptor = int
 dynamicResourceTable : Dict[int, dynamicResourceTableEntry] = {}

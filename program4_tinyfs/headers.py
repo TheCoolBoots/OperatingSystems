@@ -1,8 +1,6 @@
 from enum import Enum
 from math import ceil
-from Crypto.Random import get_random_bytes
-
-from encrypt import *
+#from encrypt import *
 
 class buffer():
     def __init__(self, contents:bytes = bytes(256)):
