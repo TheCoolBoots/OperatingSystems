@@ -61,7 +61,7 @@ class Demo():
 
         self.referenceDisk2 = fakeDisk2
 
-        with open('program4_tinyfs/TestFiles/DEMOWORK.tfs', 'wb+') as f:
+        with open('DEMOWORK.tfs', 'wb+') as f:
             f.write(fakeDisk2.serialize())
 
 if __name__ == '__main__':
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     d.initTestDisk2()
 
     #mount test, sets the cmd ()
-    tfs.tfs_mount("program4_tinyfs/TestFiles/DEMOWORK.tfs")
+    tfs.tfs_mount("DEMOWORK.tfs")
 
     print("NEXT FREE BLOCK")
     print(tfs.cmd.nextFreeBlockIndex)
