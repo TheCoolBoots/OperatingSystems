@@ -2,7 +2,7 @@ from io import FileIO
 from headers import *
 from typing import Dict
 
-
+nextDiskID = 0
 openFiles:Dict[int, FileIO] = {}
 
 def openDisk(diskFile:str, nBytes:int = 0) -> int:
