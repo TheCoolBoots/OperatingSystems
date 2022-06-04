@@ -1,5 +1,7 @@
 from enum import Enum
 from math import ceil
+from Crypto.Random import get_random_bytes
+
 from encrypt import *
 
 class buffer():
@@ -36,18 +38,25 @@ class disk():   # using the log file system
             self.blocks[1] = inode(0, 1)               # inode of root directory
             self.blocks[2] = dataNode(bytes(256))   # data of root directory
         else:
-            pass
+            ivNodeIV = get_random_bytes(AES.block_size)
+            self.blocks[0] = superblock(diskSizeBytes, 3, ivNodeIV)
+            dirIV = get_random_bytes(AES.block_size)
+            self.blocks[1] = inode(0, 1)
+            dirDataIV = get_random_bytes(AES.block_size)
+            self.blocks[2] = dataNode(bytes(256))
+            self.blocks[3] = dataNode(dirIV + dirDataIV + ivNodeIV + bytes(256 - AES.block_size * 3))
 
-    def serialize(self, encryptionKey = None) -> bytes:
+    def serialize(self) -> bytes:
         output = bytes()
         for block in self.blocks:
-            output += block.toBytes(encryptionKey)
+
+            output += block.toBytes()
 
         return output
 
 
 class block():
-    def toBytes(self, encryptionKey = None) -> bytes:
+    def toBytes(self) -> bytes:
         pass
 
 
@@ -68,7 +77,7 @@ class superblock(block):
         # 256 - 34 bytes free for free block tracking
         # = 222 bytes = 1776 bits
 
-    def toBytes(self, encryptionKey = None) -> bytes:
+    def toBytes(self) -> bytes:
         output = self.magicNumber.to_bytes(2, 'little')
         output += self.nextFreeBlockIndex.to_bytes(4, 'little')
         output += self.rootDirINode.to_bytes(4, 'little')
@@ -106,7 +115,7 @@ class superblock(block):
     def __eq__(self, other):
         if type(other) != superblock:
             return False
-        print(len(self.freeBlocks), len(other.freeBlocks))
+        # print(len(self.freeBlocks), len(other.freeBlocks))
         return self.magicNumber == other.magicNumber and self.nextFreeBlockIndex == other.nextFreeBlockIndex and self.diskSize == other.diskSize and self.freeBlocks == other.freeBlocks
             
 
@@ -141,7 +150,7 @@ class inode(block):
         # max file size = 59 * 256 bytes = 15104 bytes or 15KB
         self.dataBlockPtrs = [0] * 59 
 
-    def toBytes(self, encryptionKey = None) -> bytes:
+    def toBytes(self) -> bytes:
         output = self.filesize.to_bytes(4, 'little')
         output += self.filetype.to_bytes(2, 'little')
         output += self.permissions.to_bytes(2, 'little')
@@ -151,8 +160,6 @@ class inode(block):
         for ptr in self.dataBlockPtrs:
             output += ptr.to_bytes(4, 'little')
         
-        if encryptionKey != None:
-            output = encryptAES(output, encryptionKey)
 
         return output
 
@@ -193,19 +200,14 @@ class dataNode(block):
     inode # for given name  
     """
 
-    def toBytes(self, encryptionKey = None) -> bytes:
-
-        if encryptionKey != None:
-            return encryptAES(self.content, encryptionKey)
+    def toBytes(self) -> bytes:
         return self.content
 
 
 class freeNode(block):
     def __init__(self):
         self.content = bytes([0] * BLOCKSIZE)
-    def toBytes(self, encryptionKey = None) -> bytes:
-        if encryptionKey != None:
-            return encryptAES(self.content, encryptionKey)
+    def toBytes(self) -> bytes:
         return self.content
 
 
@@ -217,7 +219,6 @@ class dynamicResourceTableEntry:  #file descriptor and inode indexes
     def __eq__(self, other):
         if type(other) != dynamicResourceTableEntry:
             return False
-        hello = 1
         return self.inodeBlockNum == other.inodeBlockNum and self.memINode == other.memINode
 
         

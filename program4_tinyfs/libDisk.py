@@ -20,7 +20,7 @@ def openDisk(diskFile:str, nBytes:int = 0) -> int:
     except FileNotFoundError:
         return ErrorCodes.DISKNOTFOUND
 
-def readBlock(diskID:int, bNum:int, blockBuffer:buffer, decryptionKey = None):
+def readBlock(diskID:int, bNum:int, blockBuffer:buffer, decryptionKey = None, iv = None):
     if diskID in openFiles:
         openFiles[diskID].seek(bNum * BLOCKSIZE)
 
@@ -28,20 +28,20 @@ def readBlock(diskID:int, bNum:int, blockBuffer:buffer, decryptionKey = None):
             blockBuffer.contents = openFiles[diskID].read(BLOCKSIZE)
         else:
             rawData = openFiles[diskID].read(BLOCKSIZE)
-            decryptedData = decryptAES(rawData, decryptionKey)
+            decryptedData = decryptAES(rawData, decryptionKey, iv)
             blockBuffer.contents = decryptedData
         return SuccessCodes.SUCCESS
     else:
         return ErrorCodes.DISKID
 
-def writeBlock(diskID:int, bNum:int, blockBuffer:buffer, encryptionKey = None):
+def writeBlock(diskID:int, bNum:int, blockBuffer:buffer, encryptionKey = None, iv = None):
     if diskID in openFiles:
         try:
             openFiles[diskID].seek(bNum * BLOCKSIZE)
             if encryptionKey == None:
                 bytesWritten = openFiles[diskID].write(blockBuffer.contents)
             else:
-                bytesWritten = openFiles[diskID].write(encryptAES(blockBuffer.contents, encryptionKey))
+                bytesWritten = openFiles[diskID].write(encryptAES(blockBuffer.contents, encryptionKey, iv))
 
             if bytesWritten == BLOCKSIZE:
                 return SuccessCodes.SUCCESS
