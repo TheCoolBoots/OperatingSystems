@@ -2,6 +2,7 @@ from typing import Dict
 import unittest
 import tinyFS as tfs
 import libDisk as dsk
+from hashlib import md5
 
 from headers import *
 
@@ -144,59 +145,6 @@ class test_scheduler(unittest.TestCase):
             # self.assertEqual(fakeDisk2.serialize(), f.read())
         
 
-    # def initEncryptedDisk(self, encryptionKey):
-    #     tfs.fileDescriptor = int
-    #     tfs.dynamicResourceTable = {}
-    #     tfs.FDCounter = 0
-
-    #     tfs.cmd = None
-    #     tfs.cmdid = None
-
-    #     dsk.nextDiskID = 0
-    #     dsk.openFiles = {}
-
-    #     superblk = superblock(BLOCKSIZE * 8)
-    #     superblk.nextFreeBlockIndex = 7
-    #     superblk.freeBlocks = '0000000' + '1'*(1928 - 7)
-
-    #     # ivNodeContents = b'04cl}\xad\x02\x83\x03%A\x12vEC\xd9'
-    #     # b'\x00\xb6\xb9\xbe\xd0\xbe\xbb\xdc4\x13+\x8f/\x8dI\t'
-    #     # b'\xf8\xc2f\x1e"\xd2\xfd\xfe\t\xfaqm\xa0\x16\xc7t'
-    #     # b'\xae\x14\x9e\x9e\xcb\xb5\xba\xfbA0\xacx2\xda&\xb1'
-    #     # b'\xcc\x9b\xa6g\xc1[\x1cc\xb6\xaes\x91\x0c\x163='
-    #     # b'\xea)\ta\x8f\xb6\xceq\xe8\x1e\x0c\x10\xe9I\xb86'
-    #     # b'W\x04\x15\x82Lun\xfc~\xcaf\x1dP<\x80\xd4'
-    #     # b"\xde0\x1d0'\x7f\x13\x86h\r\x9a(\x1b\x9a#\x82"
-    #     ivNode = dataNode()
-
-    #     rootDirINode = inode(0, 1, 0)   # owner = root, perms = 0xffff
-    #     rootDirINode.dataBlockPtrs[0] = 2
-    #     rootDirINode.filesize = 16
-
-    #     dataBlockBytes = '_______file0'.encode('utf-8') + int(3).to_bytes(4, 'little') + bytes(256-16)
-    #     rootDirDataBlock = dataNode(dataBlockBytes)
-
-    #     file0INode = inode(512, 0)
-    #     file0INode.dataBlockPtrs[0] = 4
-    #     file0INode.dataBlockPtrs[1] = 5
-
-    #     file0Data1 = bytes(list(range(0, 256)))
-    #     file0Data2 = bytes(list(range(256, 0)))
-    #     file0DataNode1 = dataNode(file0Data1)
-    #     file0DataNode2 = dataNode(file0Data2)
-
-    #     fakeDisk = disk(2048)
-    #     fakeDisk.blocks[0] = superblk
-    #     fakeDisk.blocks[1] = rootDirINode
-    #     fakeDisk.blocks[2] = rootDirDataBlock
-    #     fakeDisk.blocks[3] = file0INode
-    #     fakeDisk.blocks[4] = file0DataNode1
-    #     fakeDisk.blocks[5] = file0DataNode2
-
-    #     self.referenceDisk = fakeDisk
-
-    #     with open('program4_tinyfs/TestFiles/mkfsTest2.tfs', 'wb+') as f:
-    #         f.write(fakeDisk.serialize())  
 
 
     def test_mount_unmount_close(self):
@@ -379,12 +327,101 @@ class test_scheduler(unittest.TestCase):
         tfs.tfs_unmount()
 
     
-    # def test_encryption(self):
-    #     self.initTestDisk('totallySecret')
-    #     tfs.tfs_mount('program4_tinyfs/TestFiles/mkfsTest1.tfs', 'totallySecret')
-    #     self.assertEqual(superblock(BLOCKSIZE * 5), tfs.cmd)
+
+    def initEncryptedDisk(self, rawKey):
+        tfs.fileDescriptor = int
+        tfs.dynamicResourceTable = {}
+        tfs.FDCounter = 0
+
+        tfs.cmd = None
+        tfs.cmdid = None
+
+        dsk.nextDiskID = 0
+        dsk.openFiles = {}
+
+        encryptionKey = md5(rawKey.encode('utf8')).digest()
+
+        # indices are shifted 1 down b/c no IV for superblock
+        initVectors = [b'04cl}\xad\x02\x83\x03%A\x12vEC\xd9',
+                    b'\x00\xb6\xb9\xbe\xd0\xbe\xbb\xdc4\x13+\x8f/\x8dI\t',
+                    b'\xf8\xc2f\x1e"\xd2\xfd\xfe\t\xfaqm\xa0\x16\xc7t',
+                    b'\xae\x14\x9e\x9e\xcb\xb5\xba\xfbA0\xacx2\xda&\xb1',
+                    b'\xcc\x9b\xa6g\xc1[\x1cc\xb6\xaes\x91\x0c\x163=',
+                    b'\xea)\ta\x8f\xb6\xceq\xe8\x1e\x0c\x10\xe9I\xb86',
+                    b'W\x04\x15\x82Lun\xfc~\xcaf\x1dP<\x80\xd4',
+                    b"\xde0\x1d0'\x7f\x13\x86h\r\x9a(\x1b\x9a#\x82"]
+
+        superblk = superblock(BLOCKSIZE * 8, 3, initVectors[2])
+        superblk.nextFreeBlockIndex = 7
+        superblk.freeBlocks = '0000000' + '1'*(222 * 8 - 7)
+        # self.assertEqual(len(superblk.toBytes()), BLOCKSIZE)
+        serialized = superblk.toBytes()
+
+        rootDirINode = inode(0, 1, 0)   # owner = root, perms = 0xffff
+        rootDirINode.dataBlockPtrs[0] = 2
+        rootDirINode.filesize = 16
+        # t = encryptAES(rootDirINode.toBytes(), encryptionKey, initVectors[0])
+        # self.assertEqual(len(t), BLOCKSIZE)
+        serialized += encryptAES(rootDirINode.toBytes(), encryptionKey, initVectors[0])
+        
+
+        dataBlockBytes = '_______file0'.encode('utf-8') + int(4).to_bytes(4, 'little') + bytes(256-16)
+        rootDirDataBlock = dataNode(dataBlockBytes)
+        # t = encryptAES(rootDirDataBlock.toBytes(), encryptionKey, initVectors[1])
+        # self.assertEqual(len(t), BLOCKSIZE)
+        serialized += encryptAES(rootDirDataBlock.toBytes(), encryptionKey, initVectors[1])
+
+        IVNodeData = initVectors[0] + initVectors[1] + initVectors[2] +initVectors[3] +initVectors[4] +initVectors[5]
+        # print(IVNodeData)
+        # print('\n')
+        contents = IVNodeData + bytes(256-len(IVNodeData))
+        t = encryptAES(contents, encryptionKey, initVectors[2])
+        # print(t)
+        # self.assertEqual(len(t), BLOCKSIZE)
+        serialized += encryptAES(contents, encryptionKey, initVectors[2])
+
+        file0INode = inode(512, 0)
+        file0INode.dataBlockPtrs[0] = 5
+        file0INode.dataBlockPtrs[1] = 6
+        # t = encryptAES(file0INode.toBytes(), encryptionKey, initVectors[3])
+        # self.assertEqual(len(t), BLOCKSIZE)
+        serialized += encryptAES(file0INode.toBytes(), encryptionKey, initVectors[3])
+
+        file0Data1 = bytes(list(range(0, 256)))
+        file0Data2 = bytes(list(range(0, 256)))
+        file0DataNode1 = dataNode(file0Data1)
+        # t = encryptAES(file0DataNode1.toBytes(), encryptionKey, initVectors[4])
+        # self.assertEqual(len(t), BLOCKSIZE)
+        serialized += encryptAES(file0DataNode1.toBytes(), encryptionKey, initVectors[4])
+
+        file0DataNode2 = dataNode(file0Data2)
+        # t = encryptAES(file0DataNode2.toBytes(), encryptionKey, initVectors[5])
+        # self.assertEqual(len(t), BLOCKSIZE)
+        serialized += encryptAES(file0DataNode2.toBytes(), encryptionKey, initVectors[5])
+
+        serialized += bytes(256)
+
+        # print(len(serialized))
+
+        with open('program4_tinyfs/TestFiles/encrypted2.tfs', 'wb+') as f:
+            f.write(serialized)  
+
+    # def test_mkfs_encrypted(self):
+    #     tfs.tfs_mkfs('program4_tinyfs/TestFiles/encrypted.tfs', 2048, 'BeepBoop')
+    #     tfs.tfs_mount('program4_tinyfs/TestFiles/encrypted.tfs')
     #     tfs.tfs_unmount()
 
+    def test_mkfs_encrypted2(self):
+        self.initEncryptedDisk('BeepBoop')
+        tfs.tfs_mount('program4_tinyfs/TestFiles/encrypted2.tfs', 'BeepBoop')
+
+        b1 = buffer()
+
+        tfs.tfs_open('file0')
+        tfs.tfs_seek(0, 20)
+        tfs.tfs_readByte(0, b1)
+        self.assertEqual(b1.contents, 20)
+        tfs.tfs_unmount()
 
 
 
