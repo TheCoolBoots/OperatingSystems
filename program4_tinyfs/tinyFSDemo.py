@@ -108,7 +108,7 @@ if __name__ == '__main__':
     print("CONTENTS BEFORE BEING WRITTEN TO")
     print(b.contents)
 
-    #write 32 0 to file0
+    #write 100 0 to file0
     writeData = buffer(bytes([0] * 512))
     tfs.tfs_write(fileNum, writeData, 100)
 
